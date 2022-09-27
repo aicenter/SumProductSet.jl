@@ -7,7 +7,6 @@ using HierarchicalUtils
 using PoissonRandom
 using LinearAlgebra: logdet, diagm
 
-
 import Mill
 
 function logsumexp(x; dims = :)
@@ -24,6 +23,7 @@ include("distributions.jl")
 include("sumnode.jl")
 include("productnode.jl")
 include("setnode.jl")
+include("modelbuilders.jl")
 
 export _Poisson, _MvNormal
 export logpdf
