@@ -20,13 +20,18 @@ end
 ####
 #	Functions for sampling the model
 ####
-Base.rand(m::SetNode) = rand(m.feature, rand(m.cardinality))
-Base.rand(m::SetNode, n::Integer) = [rand(m.feature, rand(m.cardinality)) for _ in 1:n]
+_rand(m::SetNode) = rand(m.feature, rand(m.cardinality))
+# Base.rand(m::SetNode) = Mill.BagNode(_rand(m), 2)
+function Base.rand(m::SetNode)
+    x = _rand(m)
+    Mill.BagNode(Mill.ArrayNode(x), [1:size(x, 2)])
+end
 
+Base.rand(m::SetNode, n::Int) = Mill.catobs(map(()->rand(m), 1:n))
 
 ####
 #	Functions for making the library compatible with HierarchicalUtils
 ####
 HierarchicalUtils.NodeType(::Type{<:SetNode}) = InnerNode()
-HierarchicalUtils.nodeshow(io::IO, ::SetNode) = print(io, "ProcessNode")
+HierarchicalUtils.nodeshow(io::IO, ::SetNode) = print(io, "SetNode")
 HierarchicalUtils.printchildren(node::SetNode) = [:f => node.feature, :c => node.cardinality]

@@ -9,8 +9,7 @@ Flux.@functor _Poisson
 _Poisson(logλ::Real) = _Poisson([logλ])
 _Poisson(logλ::Integer) = _Poisson(float(logλ))
 
-Base.rand(m::_Poisson) = pois_rand.(exp.(m.logλ))
-
+Base.rand(m::_Poisson) = length(m.logλ) > 1 ? throw(error("rand(m::_Poisson) is not defined for length(m.logλ) > 1")) : pois_rand(exp(m.logλ[1]))
 Base.length(m::_Poisson) = length(m.logλ)
 
 
