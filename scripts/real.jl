@@ -317,31 +317,31 @@ end
 
 function rank_table(df::DataFrame, highlight::Array{<:NamedTuple,1}; latex::Bool=false)
     push!(df, ["rank", map(c->typeof(c)==String ? "" : 0f0, df[1, 2:end])...])
-	foreach(highlight) do h
+    foreach(highlight) do h
         df[end, h.vs] = mean(map(r->StatsBase.competerank(Vector(r[h.vs]), rev=h.rev), eachrow(df[1:end-1, :])))
-	end
+    end
 
-	if !latex
-		h = map(highlight) do h
-			h1 = Highlighter(f=(data, i, j)->i< size(df, 1)&&data[i,j]==h.fa(df[i, h.vs]), crayon=crayon"yellow bold")
-			h2 = Highlighter(f=(data, i, j)->i==size(df, 1)&&data[i,j]==h.fb(df[i, h.vs]), crayon=crayon"yellow bold")
-			h1, h2
-		end
-		pretty_table(df, formatters=ft_round(2), highlighters=(collect(Iterators.flatten(h))...,))
-	else
-		h = map(highlight) do h
-			h1 = LatexHighlighter((data, i, j)->i< size(df, 1)&&data[i,j]==h.fa(df[i, h.vs]), ["color{blue}","textbf"])
-			h2 = LatexHighlighter((data, i, j)->i==size(df, 1)&&data[i,j]==h.fb(df[i, h.vs]), ["color{blue}","textbf"])
-			h1, h2
-		end
-		pretty_table(df, formatters=ft_round(2), backend=:latex, highlighters=(collect(Iterators.flatten(h))...,))
-	end
+    if !latex
+        h = map(highlight) do h
+            h1 = Highlighter(f=(data, i, j)->i< size(df, 1)&&data[i,j]==h.fa(df[i, h.vs]), crayon=crayon"yellow bold")
+            h2 = Highlighter(f=(data, i, j)->i==size(df, 1)&&data[i,j]==h.fb(df[i, h.vs]), crayon=crayon"yellow bold")
+            h1, h2
+        end
+        pretty_table(df, formatters=ft_round(2), highlighters=(collect(Iterators.flatten(h))...,))
+    else
+        h = map(highlight) do h
+            h1 = LatexHighlighter((data, i, j)->i< size(df, 1)&&data[i,j]==h.fa(df[i, h.vs]), ["color{blue}","textbf"])
+            h2 = LatexHighlighter((data, i, j)->i==size(df, 1)&&data[i,j]==h.fb(df[i, h.vs]), ["color{blue}","textbf"])
+            h1, h2
+        end
+        pretty_table(df, formatters=ft_round(2), backend=:latex, highlighters=(collect(Iterators.flatten(h))...,))
+    end
 end
 function find_best_architecture(; s::Symbol=:l_val, x::Symbol=:l_tst, kwargs...)
-	df = collect_results(datadir("mixture_of_point_processes/results"); kwargs...)
+    df = collect_results(datadir("mixture_of_point_processes/results"); kwargs...)
     df = groupby(df, [:dataset, :m, :n, :mtype])
     df = combine(df, s=>mean, x=>mean, x=>std=>:std, renamecols=false)
-	combine(df->df[argmax(df[!, s]), :], groupby(df, [:dataset, :mtype]))
+    combine(df->df[argmax(df[!, s]), :], groupby(df, [:dataset, :mtype]))
 end
 function best_architecture_table(df::DataFrame; x::Symbol=:l_tst)
     gf = groupby(df, :mtype)
