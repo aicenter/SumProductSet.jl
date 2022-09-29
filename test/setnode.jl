@@ -1,5 +1,7 @@
 using SumProductSet, Test, Distributions, Flux
 using PoissonRandom
+using StatsBase: nobs
+
 import Mill
 
 @testset "SetNode --- forward" begin
@@ -18,4 +20,26 @@ import Mill
 	@test logpdf(m, BN) != nothing
     @test length(logpdf(m, BN)) == nbags 
 	@test length(m) == 2
+end
+
+
+@testset "SetNode --- rand sampling" begin
+    d = 2
+	m = SetNode(_MvNormal(d), _Poisson(1.))
+
+    n = 10
+    @test typeof(rand(m, n)) <: Mill.BagNode
+    @test nobs(rand(m, n)) == n
+
+end
+
+
+@testset "SetNode --- integration with Flux" begin
+    d = 2
+	m = SetNode(_MvNormal(d), _Poisson(1.))
+    ps = Flux.params(m)
+
+    @test !isempty(ps)
+    x = rand(m, 10)
+    @test gradient(() -> sum(logpdf(m, x)), ps) != nothing
 end
