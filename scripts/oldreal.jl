@@ -4,7 +4,7 @@
 #SBATCH --time=24:00:00
 #SBATCH --nodes=1 --ntasks-per-node=1 --cpus-per-task=1
 #SBATCH --partition=cpu
-#SBATCH --out=/home/rektomar/logs/%x-%j.out
+#SBATCH --out=/home/papezmil/logs/%x-%j.out
 #=
 srun julia scripts/real.jl --n $SLURM_ARRAY_TASK_ID --m $1
 exit
