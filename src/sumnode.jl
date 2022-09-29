@@ -26,22 +26,32 @@ Base.length(m::SumNode) = length(m.components[1])
 
 Flux.@functor SumNode
 
+
+function logjnt(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode})
+	lkl = transpose(hcat(map(c -> logpdf(c, x) ,m.components)...))
+	w = m.prior .- logsumexp(m.prior)
+	w .+ lkl
+end
+
 """
 	logpdf(node, x)
 
 	log-likelihood of samples `x` of a model `node`
 """
-function Distributions.logpdf(m::SumNode, x::AbstractMatrix)
-	lkl = transpose(hcat(map(c -> logpdf(c, x) ,m.components)...))
-	w = m.prior .- logsumexp(m.prior)
-	logsumexp(w .+ lkl, dims = 1)[:]
+function Distributions.logpdf(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode})
+	logsumexp(logjnt(m, x), dims = 1)[:]
 end
 
 ####
 #	Functions for sampling the model
 ####
-Base.rand(m::SumNode) = rand(m.components[sample(Weights(m.prior))])
+Base.rand(m::SumNode) = rand(m.components[sample(Weights(softmax(m.prior)))])
 
+function randwithlabel(m::SumNode)
+	component = sample(Weights(softmax(m.prior)))
+	x = rand(m.components[component])
+	x, component 
+end
 
 ####
 #	Functions for making the library compatible with HierarchicalUtils
@@ -50,3 +60,7 @@ HierarchicalUtils.nodeshow(io::IO, ::SumNode) = print(io, "SumNode")
 HierarchicalUtils.NodeType(::Type{<:SumNode}) = InnerNode()
 HierarchicalUtils.printchildren(node::SumNode) = tuple(node.components...)
 
+
+####
+#	Functions for comparibility with Mill.jl
+####
