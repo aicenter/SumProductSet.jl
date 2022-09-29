@@ -5,7 +5,7 @@ using Distributions
 using StatsBase
 using HierarchicalUtils
 using PoissonRandom
-using LinearAlgebra: logdet, diagm
+using LinearAlgebra: det, diagm, cholesky
 
 import Mill
 
@@ -13,6 +13,9 @@ function logsumexp(x; dims = :)
 	xm = maximum(x, dims = dims)
 	log.(sum(exp.(x .- xm), dims = dims)) .+ xm
 end
+
+logsoftmax(x; dims = :) = x .- logsumexp(x, dims = dims)
+softmax(x; dims = :) = exp.(logsoftmax(x, dims = dims))
 
 function logfactorial(x::Real)
     # sum(log.(collect(2:x)); init=zero(Float64))
@@ -25,9 +28,10 @@ include("productnode.jl")
 include("setnode.jl")
 include("modelbuilders.jl")
 
-export _Poisson, _MvNormal
+export _Poisson, _MvNormal, _MvNormalParams
 export logpdf
 export SumNode, ProductNode, SetNode
+export randwithlabel
 
 Base.show(io::IO, ::MIME"text/plain", n::Union{SumNode, SetNode, ProductNode, Distribution}) = HierarchicalUtils.printtree(io, n)
 
