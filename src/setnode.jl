@@ -1,3 +1,4 @@
+
 struct SetNode{T, S}
     feature::T
     cardinality::S
@@ -11,9 +12,7 @@ Base.length(m::SetNode) = length(m.feature)
 function Distributions.logpdf(m::SetNode, x::Mill.BagNode)
 
     lp_inst = logpdf(m.feature, x.data)  # might not work on nonvector data
-    lp_bag = mapreduce(b->logpdf(m.cardinality, length(b)) + sum(lp_inst[b]) + logfactorial(length(b)), vcat, x.bags)
-    
-    return lp_bag
+    mapreduce(b->logpdf(m.cardinality, length(b)) + sum(lp_inst[b]) + logfactorial(length(b)), vcat, x.bags)
 end
 
 
@@ -27,7 +26,7 @@ function Base.rand(m::SetNode)
     Mill.BagNode(Mill.ArrayNode(x), [1:size(x, 2)])
 end
 
-Base.rand(m::SetNode, n::Int) = Mill.catobs(map(()->rand(m), 1:n))
+Base.rand(m::SetNode, n::Int) = Mill.catobs(map(_->rand(m), 1:n))
 
 ####
 #	Functions for making the library compatible with HierarchicalUtils
