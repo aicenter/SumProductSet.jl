@@ -1,11 +1,12 @@
 
-mutable struct _Poisson{T} <: DiscreteUnivariateDistribution
+mutable struct _Poisson{T} <: DiscreteUnivariateDistribution where {T<:Real}
     logλ::Array{T, 1}
 end
 Flux.@functor _Poisson
 
 _Poisson(logλ::Real) = _Poisson([logλ])
-_Poisson(logλ::Integer) = _Poisson(float(logλ))
+_Poisson(logλ::Integer) = _Poisson(Float64(logλ))
+_Poisson() = _Poisson(log(rand(2:5)))
 
 Base.rand(m::_Poisson) = length(m.logλ) > 1 ? throw(error("rand(m::_Poisson) is not defined for length(m.logλ) > 1")) : pois_rand(exp(m.logλ[1]))
 Base.length(m::_Poisson) = length(m.logλ)

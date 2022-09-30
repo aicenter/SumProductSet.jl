@@ -14,11 +14,11 @@ end
 	SumNode(components::Vector) 
 
 	Mixture of components. Each component has to be a valid pdf. If prior vector 
-	is not provided, it is initialized to uniform.
+	is not provided, it is initialized randomly.
 """
 function SumNode(components::Vector) 
 	n = length(components); 
-	SumNode(components, fill(1f0, n))
+	SumNode(components, rand(Float64, n))
 end
 
 Base.getindex(m::SumNode, i ::Int) = (c = m.components[i], p = m.prior[i])

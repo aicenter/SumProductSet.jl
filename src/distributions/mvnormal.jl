@@ -1,5 +1,5 @@
 
-mutable struct _MvNormal{T} <: ContinuousMultivariateDistribution
+mutable struct _MvNormal{T} <: ContinuousMultivariateDistribution where {T<:Real}
     b::Array{T,1}
     A::Array{T,2}
 end
@@ -11,12 +11,11 @@ function _MvNormalParams(μ::Array{T, 1}, Σ::Array{T, 2}) where {T<:Real}
     _MvNormal(b, A)
 end
 
-_MvNormal(d::Int) =_MvNormal(zeros(Float64, d), diagm(ones(Float64, d)))
+_MvNormal(d::Int) =_MvNormal(randn(Float64, d), diagm(1 .+ 0.25*rand(Float64, d)))
 
 function Base.rand(m::_MvNormal{T}, n::Int) where {T<:Real} 
     inv(m.A) * (randn(T, length(m.b), n) .- m.b)
 end
-
 Base.rand(m::_MvNormal) = vec(rand(m, 1))
 
 Base.length(m::_MvNormal) = length(m.b)
