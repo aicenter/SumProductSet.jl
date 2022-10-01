@@ -47,7 +47,7 @@ end
 ####
 
 _sampleids(m::SumNode, n::Int) = sample(1:length(m.prior), Weights(softmax(m.prior)), n)
-_sampleids(m::SumNode) = sample(1:length(m.prior), Weights(softmax(m.prior)))
+_sampleids(m::SumNode) = _sampleids(m, 1)[]
 
 function Base.rand(m::SumNode, n::Int)
 	if n == 0 
@@ -74,6 +74,16 @@ function randwithlabel(m::SumNode, n::Int)
 	x, ids
 end
 function randwithlabel(m::SumNode)
+	xm, ids = randwithlabel(m, 1)
+	vec(xm), ids[]
+end
+
+function randwithlabel(m::SumNode{T, <:SetNode}, n::Int) where T
+	ids = _sampleids(m, n)
+	x = Mill.catobs(rand.(m.components[ids])...)
+	x, ids
+end
+function randwithlabel(m::SumNode{T, <:SetNode}) where T
 	xm, ids = randwithlabel(m, 1)
 	vec(xm), ids[]
 end
