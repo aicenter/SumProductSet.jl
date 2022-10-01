@@ -32,6 +32,7 @@ export _Poisson, _MvNormal, _MvNormalParams
 export logpdf
 export SumNode, ProductNode, SetNode
 export randwithlabel
+export setmixture
 
 Base.show(io::IO, ::MIME"text/plain", n::Union{SumNode, SetNode, ProductNode, Distribution}) = HierarchicalUtils.printtree(io, n)
 
