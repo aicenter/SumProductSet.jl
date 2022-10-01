@@ -45,12 +45,37 @@ end
 ####
 #	Functions for sampling the model
 ####
-Base.rand(m::SumNode) = rand(m.components[sample(Weights(softmax(m.prior)))])
 
+_sampleids(m::SumNode, n::Int) = sample(1:length(m.prior), Weights(softmax(m.prior)), n)
+_sampleids(m::SumNode) = sample(1:length(m.prior), Weights(softmax(m.prior)))
+
+function Base.rand(m::SumNode, n::Int)
+	if n == 0 
+		# fix fixed Float64 type
+		return zeros(Float64, length(m), 0)
+	else
+		return hcat(rand.(m.components[_sampleids(m, n)])...)
+	end
+end
+Base.rand(m::SumNode) = vec(rand(m, 1))
+
+function Base.rand(m::SumNode{T, <:SetNode}, n::Int) where T 
+	if n == 0 
+		return missing
+	else
+		return Mill.catobs(rand.(m.components[_sampleids(m, n)])...)
+	end
+end
+Base.rand(m::SumNode{T, <:SetNode}) where T = rand(m.components[_sampleids(m)])
+
+function randwithlabel(m::SumNode, n::Int)
+	ids = _sampleids(m, n)
+	x = hcat(rand.(m.components[ids])...)
+	x, ids
+end
 function randwithlabel(m::SumNode)
-	component = sample(Weights(softmax(m.prior)))
-	x = rand(m.components[component])
-	x, component 
+	xm, ids = randwithlabel(m, 1)
+	vec(xm), ids[]
 end
 
 ####

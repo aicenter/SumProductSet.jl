@@ -23,9 +23,9 @@ function logfactorial(x::Real)
 end
 
 include("distributions.jl")
+include("setnode.jl")
 include("sumnode.jl")
 include("productnode.jl")
-include("setnode.jl")
 include("modelbuilders.jl")
 
 export _Poisson, _MvNormal, _MvNormalParams
