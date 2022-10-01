@@ -30,16 +30,15 @@ function Base.rand(m::SetNode)
     elseif typeof(x) <: Mill.ArrayNode
         xm = x
     elseif typeof(x) <: Mill.BagNode
-        throw(error(throw(error("rand not implemented yet for set of set"))))
+        @error "rand not implemented yet for set of set"
     elseif typeof(x) <: Mill.ProductNode
-        throw(error(throw(error("rand not implemented yet for set of product nodes"))))
+        @error "rand not implemented yet for set of product nodes"
     end
     Mill.BagNode(xm, [1:card])
 end
 
 function Base.rand(m::SetNode, n::Int)
-    if n == 0 
-        println("haha")
+    if n == 0
         return Mill.BagNode(missing, [1:0])
     else
         return Mill.catobs(map(_->rand(m), 1:n))
