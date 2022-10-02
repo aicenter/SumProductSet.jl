@@ -18,7 +18,8 @@ end
 """
 function SumNode(components::Vector) 
 	n = length(components); 
-	SumNode(components, rand(Float64, n))
+	# SumNode(components, rand(Float64, n))
+	SumNode(components, fill(1e0, n))
 end
 
 Base.getindex(m::SumNode, i ::Int) = (c = m.components[i], p = m.prior[i])
@@ -26,10 +27,9 @@ Base.length(m::SumNode) = length(m.components[1])
 
 Flux.@functor SumNode
 
-
 function logjnt(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode})
-	lkl = transpose(hcat(map(c -> logpdf(c, x) ,m.components)...))
-	w = m.prior .- logsumexp(m.prior)
+	lkl = transpose(hcat(map(c -> logpdf(c, x), m.components)...))
+	w = logsoftmax(m.prior)
 	w .+ lkl
 end
 
