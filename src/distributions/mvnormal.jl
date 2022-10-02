@@ -11,7 +11,7 @@ function _MvNormalParams(μ::Array{T, 1}, Σ::Array{T, 2}) where {T<:Real}
     _MvNormal(b, A)
 end
 
-_MvNormal(d::Int) =_MvNormal(randn(Float64, d), diagm(1 .+ 0.25*rand(Float64, d)))
+_MvNormal(d::Int) =_MvNormalParams(randn(Float64, d), diagm(0.5 .+ 0.5*rand(Float64, d)))
 
 function Base.rand(m::_MvNormal{T}, n::Int) where {T<:Real} 
     inv(m.A) * (randn(T, length(m.b), n) .- m.b)
