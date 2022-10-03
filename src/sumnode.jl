@@ -14,7 +14,7 @@ end
 	SumNode(components::Vector) 
 
 	Mixture of components. Each component has to be a valid pdf. If prior vector 
-	is not provided, it is initialized randomly.
+	is not provided, it is initialized uniformly.
 """
 function SumNode(components::Vector) 
 	n = length(components); 
@@ -27,6 +27,11 @@ Base.length(m::SumNode) = length(m.components[1])
 
 Flux.@functor SumNode
 
+"""
+	logjnt(node, x)
+
+	log-jointlikelihood of samples `x` and class/cluster label of a model `node`
+"""
 function logjnt(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode})
 	lkl = transpose(hcat(map(c -> logpdf(c, x), m.components)...))
 	w = logsoftmax(m.prior)

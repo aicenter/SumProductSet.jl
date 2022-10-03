@@ -1,4 +1,10 @@
 
+"""
+	Setnode(feature, cardinality)
+
+	Iid cluster model of point process. 
+    Both feature and cardinality has to be valid distributions/nodes with valid logpdf. 
+"""
 struct SetNode{T, S}
     feature::T
     cardinality::S
@@ -8,13 +14,15 @@ Flux.@functor SetNode
 
 Base.length(m::SetNode) = length(m.feature)
 
+"""
+	logpdf(node, x)
 
+	log-likelihood of Mill bagnode `x` of a set model `node`
+"""
 function Distributions.logpdf(m::SetNode, x::Mill.BagNode)
-
     lp_inst = logpdf(m.feature, x.data)  # might not work on nonvector data
     mapreduce(b->logpdf(m.cardinality, length(b)) + sum(lp_inst[b]) + logfactorial(length(b)), vcat, x.bags)
 end
-
 
 ####
 #	Functions for sampling the model
@@ -30,7 +38,7 @@ function Base.rand(m::SetNode)
     elseif typeof(x) <: Mill.ArrayNode
         xm = x
     elseif typeof(x) <: Mill.BagNode
-        @error "rand not implemented yet for set of set"
+        @error "rand not tested yet for set of set"
     elseif typeof(x) <: Mill.ProductNode
         @error "rand not implemented yet for set of product nodes"
     end
