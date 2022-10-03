@@ -257,6 +257,7 @@ function best_architecture_table(df::DataFrame; x::Symbol=:l_tst)
                                 :n => ByRow(n->"$(n)")=>"n_"*name, renamecols=false)
         end
     end
+    @showdf
     df = innerjoin(df...; on=:dataset, makeunique=true)
 
     ls = Symbol.(filter(name->contains(name, "$(x)"), names(df)))
@@ -319,7 +320,11 @@ end
 # main_local_real()
 main_slurm_real()
 
-# Base.run(`clear`)
+Base.run(`clear`)
+best_architecture_table(find_best_architecture(; s=:l_val, x=:l_tst); x=:l_tst)
+best_architecture_table(find_best_architecture(; s=:l_val, x=:i_tst); x=:i_tst)
+best_architecture_table(find_best_architecture(; s=:l_val, x=:r_tst); x=:r_tst)
+
 # best_architecture_table(find_best_architecture(; s=:l_val, x=:l_tst, rexclude=[r"ILM"]); x=:l_tst)
 # best_architecture_table(find_best_architecture(; s=:l_val, x=:i_tst, rexclude=[r"ILM"]); x=:i_tst)
 # best_architecture_table(find_best_architecture(; s=:l_val, x=:r_tst, rexclude=[r"ILM"]); x=:r_tst)
