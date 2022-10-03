@@ -4,7 +4,23 @@ function gmm(n::Int, d::Int)
 end
 
 
-function setmixture(nb::Int, ni::Int, d::Int; fdist=:gmm, covtype=:full)
+function setmixture(nb::Int, ni::Int, d::Int; covtype=:full)
+    f() = if ni > 1
+        gmm(ni, d) 
+    else
+        _MvNormal(d)
+    end
+    
+    components = map(1:nb) do _
+        pc = _Poisson()
+        pf = f()
+        SetNode(pf, pc)
+    end
+    SumNode(components)
+end
+
+
+function setmixtureold(nb::Int, ni::Int, d::Int; fdist=:gmm, covtype=:full)
     f() = if fdist == :gmm
         gmm(ni, d) 
     elseif fdist ∈ [:mvnormal, :MvNormal, :normal, :gaussian]
