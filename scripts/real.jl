@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-#SBATCH --array=1-60
+#SBATCH --array=1-20
 #SBATCH --mem=8G
 #SBATCH --time=24:00:00
 #SBATCH --nodes=1 --ntasks-per-node=1 --cpus-per-task=1
@@ -12,7 +12,9 @@ exit
 
 using DrWatson
 @quickactivate
-using Mill
+
+using SumProductSet
+import Mill
 using Flux
 using NNlib
 using Random
@@ -31,113 +33,9 @@ using SpecialFunctions
 const maxseed = 20
 const path = "/home/$(ENV["USER"])/datasets/clean/mill"
 
-const _BagNode{T} = BagNode{ArrayNode{Matrix{T}, N}, S, N} where {N<:Nothing, S<:AbstractBags{Int64}}
 
-abstract type Mixture end
-
-
-
-
-function _logpdf(v::AbstractArray{T,1}, n::Int) where {T<:Real}
-    n*log.(v) - v .- T(logfactorial(n))
-end
-
-function _logpdf(a::AbstractArray{T,1}, b::AbstractArray{T,1}, x::AbstractArray{T,2}) where {T<:Real}
-    z = a.*x .+ b
-    -T(0.5)*(size(x, 1)*log(T(2.0)*T(pi)) .+ sum(z.^2, dims=1)) .+ sum(log.(a)) .+ eps(T)
-end
-function _logpdf(a::AbstractArray{T,2}, b::AbstractArray{T,1}, x::AbstractArray{T,2}) where {T<:Real}
-    z = a*x .+ b
-    -T(0.5)*(size(x, 1)*log(T(2.0)*T(pi)) .+ sum(z.^2, dims=1)) .+ log(abs(det(a))) .+ eps(T)
-end
-
-
-
-
-mutable struct ILM1F{Tr,N,Ti} <: Mixture
-    n::Ti
-    d::Ti
-    w::AbstractArray{Tr,1}
-    a::AbstractArray{Tr,N}
-    b::AbstractArray{Tr,2}
-    name::String
-end
-Flux.@functor ILM1F
-function ILM1F{Tr,2}(n::Ti, d::Ti) where {Tr<:Real,Ti<:Int}
-    ILM1F(n, d, zeros(Tr, n), ones(Tr, d, n), randn(Tr, d, n), "ILM1F")
-end
-function ILM1F{Tr,3}(n::Ti, d::Ti) where {Tr<:Real,Ti<:Int}
-    ILM1F(n, d, zeros(Tr, n), permutedims(reshape(repeat(diagm(ones(Tr, d)), 1, n), :, d, n), (2, 1, 3)), randn(Tr, d, n), "ILM1F")
-end
-ILM1F{Tr,N}(n::Ti, m::Ti, d::Ti) where {Tr<:Real,Ti<:Int,N} = ILM1F{Tr,N}(n, d)
-function logjnt(m::ILM1F{Tr,N}, x::_BagNode{Tr}) where {Tr<:Real,N}
-    p_inst = mapreduce(i->_logpdf(selectdim(m.a, N, i), m.b[:, i], x.data.data), vcat, 1:m.n)
-    return logsoftmax(m.w) .+ p_inst
-end
-logpdf(m::ILM1F{Tr,N}, x::_BagNode{Tr}) where {Tr<:Real,N} = logsumexp(logjnt(m, x); dims=1)
-
-
-mutable struct BLM1F{Tr,N,Ti} <: Mixture
-    n::Ti
-    d::Ti
-    w::AbstractArray{Tr,1}
-    v::AbstractArray{Tr,1}
-    a::AbstractArray{Tr,N}
-    b::AbstractArray{Tr,2}
-    name::String
-end
-Flux.@functor BLM1F
-function BLM1F{Tr,2}(n::Ti, d::Ti) where {Tr<:Real,Ti<:Int}
-    BLM1F(n, d, zeros(Tr, n), 10ones(Tr, n), ones(Tr, d, n), randn(Tr, d, n), "BLM1")
-end
-function BLM1F{Tr,3}(n::Ti, d::Ti) where {Tr<:Real,Ti<:Int}
-    BLM1F(n, d, zeros(Tr, n), 10ones(Tr, n), permutedims(reshape(repeat(diagm(ones(Tr, d)), 1, n), :, d, n), (2, 1, 3)), randn(Tr, d, n), "BLM1")
-end
-BLM1F{Tr,N}(n::Ti, m::Ti, d::Ti) where {Tr<:Real,Ti<:Int,N} = BLM1F{Tr,N}(n, d)
-function logjnt(m::BLM1F{Tr,N}, x::_BagNode{Tr}) where {Tr<:Real,N}
-    m.w = logsoftmax(m.w)
-
-    p_inst = mapreduce(i->_logpdf(selectdim(m.a, N, i), m.b[:, i], x.data.data), vcat, 1:m.n)
-    p_bags = mapreduce(b->_logpdf(exp.(m.v), length(b)) + sum(p_inst[:, b], dims=2), hcat, x.bags)
-    return m.w .+ p_bags
-end
-logpdf(m::BLM1F{Tr,N}, x::_BagNode{Tr}) where {Tr<:Real,N} = logsumexp(logjnt(m, x); dims=1)
-
-
-mutable struct BLM2F{Tr,N,Ti} <: Mixture
-    n::Ti
-    m::Ti
-    d::Ti
-    w::AbstractArray{Tr,1}
-    α::AbstractArray{Tr,2}
-    v::AbstractArray{Tr,1}
-    a::AbstractArray{Tr,N}
-    b::AbstractArray{Tr,2}
-    name::String
-end
-Flux.@functor BLM2F
-function BLM2F{Tr,2}(n::Ti, m::Ti, d::Ti) where {Tr<:Real,Ti<:Int}
-    BLM2F(n, m, d, zeros(Tr, n), zeros(Tr, m, n), 10ones(Tr, n), ones(Tr, d, n*m), randn(Tr, d, n*m), "BLM2")
-end
-function BLM2F{Tr,3}(n::Ti, m::Ti, d::Ti) where {Tr<:Real,Ti<:Int}
-    BLM2F(n, m, d, zeros(Tr, n), zeros(Tr, m, n), 10ones(Tr, n), permutedims(reshape(repeat(diagm(ones(Tr, d)), 1, n*m), :, d, n*m), (2, 1, 3)), randn(Tr, d, n*m), "BLM2")
-end
-function logjnt(m::BLM2F{Tr,N}, x::_BagNode{Tr}) where {Tr<:Real,N}
-    m.α = logsoftmax(m.α)
-    m.w = logsoftmax(m.w)
-
-    p_inst = mapreduce(i->_logpdf(selectdim(m.a, N, i), m.b[:, i], x.data.data), vcat, 1:m.n*m.m) .+ vec(m.α)
-    p_inst = mapreduce(i->logsumexp(p_inst[i, :]; dims=1), vcat, Iterators.partition(1:m.n*m.m, m.m))
-    p_bags = mapreduce(b->_logpdf(exp.(m.v), length(b)) + sum(p_inst[:, b], dims=2), hcat, x.bags)
-    return m.w .+ p_bags
-end
-logpdf(m::BLM2F{Tr,N}, x::_BagNode{Tr}) where {Tr<:Real,N} = logsumexp(logjnt(m, x); dims=1)
-
-
-
-
-function train!(m::Mixture, x_trn::_BagNode{T}, x_val, x_tst, y_trn, y_val, y_tst; niter::Int=100, opt=ADAM(0.01)) where {T<:Real}
-    @printf("model: %s:\n", m.name)
+function train!(m::SumNode{T, <:SetNode}, x_trn::S, x_val::S, x_tst::S, y_trn, y_val, y_tst; niter::Int=100, opt=ADAM(0.01)) where {T, S<:Mill.BagNode}
+    # @printf("model: %s:\n", m.name)
 
     ps = Flux.params(m)
 
@@ -146,16 +44,14 @@ function train!(m::Mixture, x_trn::_BagNode{T}, x_val, x_tst, y_trn, y_val, y_ts
     for _ in 1:niter
         gs = gradient(()->-mean(logpdf(m, x_trn)), ps)
         Flux.Optimise.update!(opt, ps, gs)
-        status = status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst)
+        status = status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, true)
     end
 
     return status
 end
 
 
-
-
-function status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, verbose=true)
+function status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, verbose=false)
     l_trn = mean(logpdf(m, x_trn))
     l_val = mean(logpdf(m, x_val))
     l_tst = mean(logpdf(m, x_tst))
@@ -168,11 +64,11 @@ function status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, verbose=true)
     ŷ_val = getindex.(argmax(softmax(logjnt(m, x_val)), dims=1), 1)
     ŷ_tst = getindex.(argmax(softmax(logjnt(m, x_tst)), dims=1), 1)
 
-    if isa(m, ILM1F)
-        ŷ_trn = map(j->maximum(ŷ_trn[j]), x_trn.bags)
-        ŷ_val = map(j->maximum(ŷ_val[j]), x_val.bags)
-        ŷ_tst = map(j->maximum(ŷ_tst[j]), x_tst.bags)     
-    end
+    # if isa(m, ILM1F)
+    #     ŷ_trn = map(j->maximum(ŷ_trn[j]), x_trn.bags)
+    #     ŷ_val = map(j->maximum(ŷ_val[j]), x_val.bags)
+    #     ŷ_tst = map(j->maximum(ŷ_tst[j]), x_tst.bags)     
+    # end
 
     h_trn = vmeasure(y_trn, ŷ_trn; β=1e-4)
     h_val = vmeasure(y_val, ŷ_val; β=1e-4)
@@ -190,27 +86,28 @@ function status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, verbose=true)
     v_val = Clustering.varinfo(y_val, ŷ_val)
     v_tst = Clustering.varinfo(y_tst, ŷ_tst)
 
-    if m.n == 2
-        a_trn = sum(abs.(y_trn - vec(ŷ_trn))) / length(y_trn)
-        a_val = sum(abs.(y_val - vec(ŷ_val))) / length(y_val)
-        a_tst = sum(abs.(y_tst - vec(ŷ_tst))) / length(y_tst)
+    # if m.n == 2
+    # mean absolute error
+    a_trn = sum(abs.(y_trn - vec(ŷ_trn))) / length(y_trn)
+    a_val = sum(abs.(y_val - vec(ŷ_val))) / length(y_val)
+    a_tst = sum(abs.(y_tst - vec(ŷ_tst))) / length(y_tst)
 
-        if verbose == true
-            @printf("lkl:| %2.4e %2.4e %2.4e |    ari:| %.2f %.2f %.2f |\n",
-                l_trn, l_val, l_tst, i_trn, i_val, i_tst)
-        else
-            @printf("lkl:| %2.4e %2.4e %2.4e |    h:| %.2f %.2f %.2f |    c:| %.2f %.2f %.2f |    ari:| %.2f %.2f %.2f |    ri:| %.2f %.2f %.2f |    vi:| %.2f %.2f %.2f |    a:| %.2f %.2f %.2f | \n",
-                l_trn, l_val, l_tst, h_trn, h_val, h_tst, c_trn, c_val, c_tst, i_trn, i_val, i_tst, r_trn, r_val, r_tst, v_trn, v_val, v_tst, a_trn, a_val, a_tst)
-        end
+    if verbose == false
+        @printf("lkl:| %2.4e %2.4e %2.4e |    ari:| %.2f %.2f %.2f |\n",
+            l_trn, l_val, l_tst, i_trn, i_val, i_tst)
     else
-        if verbose == true
-            @printf("lkl:| %2.4e %2.4e %2.4e |    ari:| %.2f %.2f %.2f |\n",
-                l_trn, l_val, l_tst, i_trn, i_val, i_tst)
-        else
-            @printf("lkl:| %2.4e %2.4e %2.4e |    h:| %.2f %.2f %.2f |    c:| %.2f %.2f %.2f |    ari:| %.2f %.2f %.2f |    ri:| %.2f %.2f %.2f |    vi:| %.2f %.2f %.2f | \n",
-                l_trn, l_val, l_tst, h_trn, h_val, h_tst, c_trn, c_val, c_tst, i_trn, i_val, i_tst, r_trn, r_val, r_tst, v_trn, v_val, v_tst)
-        end
+        @printf("lkl:| %2.4e %2.4e %2.4e |    h:| %.2f %.2f %.2f |    c:| %.2f %.2f %.2f |    ari:| %.2f %.2f %.2f |    ri:| %.2f %.2f %.2f |    vi:| %.2f %.2f %.2f |    a:| %.2f %.2f %.2f | \n",
+            l_trn, l_val, l_tst, h_trn, h_val, h_tst, c_trn, c_val, c_tst, i_trn, i_val, i_tst, r_trn, r_val, r_tst, v_trn, v_val, v_tst, a_trn, a_val, a_tst)
     end
+    # else
+    #     if verbose == false
+    #         @printf("lkl:| %2.4e %2.4e %2.4e |    ari:| %.2f %.2f %.2f |\n",
+    #             l_trn, l_val, l_tst, i_trn, i_val, i_tst)
+    #     else
+    #         @printf("lkl:| %2.4e %2.4e %2.4e |    h:| %.2f %.2f %.2f |    c:| %.2f %.2f %.2f |    ari:| %.2f %.2f %.2f |    ri:| %.2f %.2f %.2f |    vi:| %.2f %.2f %.2f | \n",
+    #             l_trn, l_val, l_tst, h_trn, h_val, h_tst, c_trn, c_val, c_tst, i_trn, i_val, i_tst, r_trn, r_val, r_tst, v_trn, v_val, v_tst)
+    #     end
+    # end
 
     (; l_trn, l_val, l_tst, h_trn, h_val, h_tst, c_trn, c_val, c_tst, i_trn, i_val, i_tst, r_trn, r_val, r_tst, v_trn, v_val, v_tst)
 end
@@ -250,13 +147,14 @@ function command_line()
     end
     parse_args(s)
 end
-function experiment(n::Int, dirdata::String, dataset_attributes::NamedTuple, grid)
+function experiment(id::Int, dirdata::String, dataset_attributes::NamedTuple, grid)
     (; dataset, ndims, ndata, nbags) = dataset_attributes
 
-    mtype, n, m, ctype, nepoc, split, seed = collect(grid)[n]
+    mtype = :setmixture # fixed for now
+    n, m, ctype, nepoc, split, seed = collect(grid)[id]
     Random.seed!(seed)
 
-    (; dirdata, dataset, ndims, ndata, nbags, split, seed, n, m, nepoc, mtype, ctype, itype=Int64, ftype=Float32, ngrid=length(grid))
+    (; dirdata, dataset, ndims, ndata, nbags, split, seed, n, m, nepoc, mtype, ctype, itype=Int64, ftype=Float64, ngrid=length(grid))
 end
 function preprocess(x::AbstractArray{Tr,2}, y::AbstractArray{Ti,1}, b::AbstractArray{Ti,1}, i::AbstractArray{Ti,1}=collect(1:maximum(b)), split::AbstractArray{Tr,1}=Tr.([64e-2, 16e-2, 2e-1])) where {Tr<:Real,Ti<:Int}
     x = x[vec(std(x, dims=2) .> Tr(1e-5)), :]
@@ -265,7 +163,7 @@ function preprocess(x::AbstractArray{Tr,2}, y::AbstractArray{Ti,1}, b::AbstractA
     sd =  std(x, dims=2)
     x = (x .- mn) ./ sd
 
-    x = BagNode(x, b)
+    x = Mill.BagNode(x, b)
     n = cumsum(map(n->ceil(Ti, n), split*nobs(x)))
 
     x_trn = x[i[1:n[1]]]
@@ -299,7 +197,7 @@ function load_real_data(config::NamedTuple)
                               sort=false,
                               accesses=(:dataset, :ndims, :nbags, :ndata))
     @unpack x, y, b, i = file
-    data = preprocess(x, y, b, i[:, seed], ftype.(split))
+    data = preprocess(ftype.(x), y, b, i[:, seed], ftype.(split))
     return data..., config
 end
 function estimate(config::NamedTuple)
@@ -308,7 +206,9 @@ function estimate(config::NamedTuple)
 
     @show dataset, n, m, seed
 
-    model = getfield(@__MODULE__, mtype){ftype,ctype}(n, m, size(x_trn.data.data, 1))
+    # model = getfield(@__MODULE__, mtype){ftype,ctype}(n, m, size(x_trn.data.data, 1))
+    d = size(x_trn.data.data, 1)
+    model = setmixture(n, m, d)
     status = train!(model, x_trn, x_val, x_tst, y_trn, y_val, y_tst; niter=nepoc)
 
     ntuple2dict(merge(config, status, (; model)))
@@ -369,26 +269,21 @@ function best_architecture_table(df::DataFrame; x::Symbol=:l_tst)
 end
 
 
-
-
 function main_local_real()
     # Random.seed!(1)
 
     @load "$(path)/brown_creeper.bson" data labs bags
-    x_trn, x_val, x_tst, y_trn, y_val, y_tst = preprocess(Float32.(data), labs, bags)
+    x_trn, x_val, x_tst, y_trn, y_val, y_tst = preprocess(Float64.(data), labs, bags)
 
     d = size(x_trn.data.data, 1)
     n = 2
-    m = 3
-    t = 2
 
-    mi_1f = ILM1F{Float32,t}(n,    d)
-    mb_1f = BLM1F{Float32,t}(n,    d)
-    mb_2f = BLM2F{Float32,t}(n, m, d)
+    mb_1f = setmixture(n, 1, d)
+    mb_2f = setmixture(n, 3, d)
 
     niter = 100
 
-    train!(deepcopy(mi_1f), x_trn, x_val, x_tst, y_trn, y_val, y_tst; niter=niter)
+    # train!(deepcopy(mi_1f), x_trn, x_val, x_tst, y_trn, y_val, y_tst; niter=niter)
     train!(deepcopy(mb_1f), x_trn, x_val, x_tst, y_trn, y_val, y_tst; niter=niter)
     train!(deepcopy(mb_2f), x_trn, x_val, x_tst, y_trn, y_val, y_tst; niter=niter)
 
@@ -399,13 +294,17 @@ function main_slurm_real()
     @unpack n, m = command_line()
     dataset = datasets[m]
     grid = Iterators.product(
-        [:ILM1F, :BLM1F, :BLM2F],
-        [2 4 8],
-        [4 8],
+        [2 4],
+        [1 4 8],
         [2],
         [100],
         [[64e-2, 16e-2, 2e-1]],
-        collect(1:5))
+        collect(1:3))
+
+        # n, m, covtype, nepochs, train/val/test split, seeds
+        # |grid| = 4 * 2 * 3 = 18
+        # n_dataset * |grid| = 20 * 18 = 360 < max_jobs = 400
+        # TO DO: add learning rate to grid
 
     produce_or_load(datadir("mixture_of_point_processes/results"),
                     experiment(n, dirdata, dataset, grid),
@@ -417,8 +316,8 @@ function main_slurm_real()
 end
 
 
-main_local_real()
-# main_slurm_real()
+# main_local_real()
+main_slurm_real()
 
 # Base.run(`clear`)
 # best_architecture_table(find_best_architecture(; s=:l_val, x=:l_tst, rexclude=[r"ILM"]); x=:l_tst)
