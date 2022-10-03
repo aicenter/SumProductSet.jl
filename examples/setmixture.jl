@@ -44,7 +44,7 @@ instances = (instances .- mn) ./ sd
 stdbags = Mill.BagNode(Mill.ArrayNode(instances), bagids)
 
 instlabels = mapreduce(a -> repeat([a[1]], length(a[2])), vcat, zip(baglabels, bagids))
-display(scatter(instances[1, :], instances[2, :], group=instlabels, alpha=0.8, title="Normalized innstance space"))
+display(scatter(instances[1, :], instances[2, :], group=instlabels, alpha=0.8, title="Normalized instance space"))
 
 m2 = setmixture(3, 1, 2)
 train!(m2, stdbags)
