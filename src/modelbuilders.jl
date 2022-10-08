@@ -1,38 +1,21 @@
 
-function gmm(n::Int, d::Int)
-    SumNode([_MvNormal(d) for _ in 1:n])
+function gmm(n::Int, d::Int; 
+    dtype::Type{<:Real}=Float64, μinit::Symbol=:uniform, Σinit::Symbol=:unit, Σtype::Symbol=:full)
+
+    ps = (; dtype, μinit, Σinit, Σtype)
+    SumNode([_MvNormal(d; ps...) for _ in 1:n]; dtype=dtype)
 end
 
+function setmixture(nb::Int, ni::Int, d::Int; 
+    dtype::Type{<:Real}=Float64, μinit::Symbol=:uniform, Σinit::Symbol=:unit, Σtype::Symbol=:full)
 
-function setmixture(nb::Int, ni::Int, d::Int; covtype=:full)
-    f() = if ni > 1
-        gmm(ni, d) 
-    else
-        _MvNormal(d)
-    end
+    ps = (; dtype, μinit, Σinit, Σtype)
+    fdist() = ni > 1 ? gmm(ni, d; ps...) : _MvNormal(d; ps...)
     
     components = map(1:nb) do _
         pc = _Poisson()
-        pf = f()
+        pf = fdist()
         SetNode(pf, pc)
     end
-    SumNode(components)
-end
-
-
-function setmixtureold(nb::Int, ni::Int, d::Int; fdist=:gmm, covtype=:full)
-    f() = if fdist == :gmm
-        gmm(ni, d) 
-    elseif fdist ∈ [:mvnormal, :MvNormal, :normal, :gaussian]
-        _MvNormal(d)
-    else
-        @error "Unknown fdist $(fdist)"
-    end
-    
-    components = map(1:nb) do _
-        pc = _Poisson()
-        pf = f()
-        SetNode(pf, pc)
-    end
-    SumNode(components)
+    SumNode(components; dtype=dtype)
 end
