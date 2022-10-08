@@ -39,11 +39,18 @@ end
 ####
 #	Functions for calculating full likelihood
 ####
-function Distributions.logpdf(m::ProductNode, x)
-	m
+function Distributions.logpdf(m::ProductNode, x::AbstractMatrix)
 	o = logpdf(m.components[1], x[m.dimensions[1],:])
 	for i in 2:length(m.components)
 		o += logpdf(m.components[i], x[m.dimensions[i],:])
+	end
+	o
+end
+
+function Distributions.logpdf(m::ProductNode, x::Mill.ArrayNode)
+	o = logpdf(m.components[1], x.data[m.dimensions[1],:])
+	for i in 2:length(m.components)
+		o += logpdf(m.components[i], x.data[m.dimensions[i],:])
 	end
 	o
 end
