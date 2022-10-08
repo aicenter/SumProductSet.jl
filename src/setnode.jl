@@ -1,8 +1,8 @@
 
 """
-	Setnode(feature, cardinality)
+    Setnode(feature, cardinality)
 
-	Iid cluster model of point process. 
+    Iid cluster model of point process. 
     Both feature and cardinality has to be valid distributions/nodes with valid logpdf. 
 """
 struct SetNode{T, S}
@@ -15,9 +15,9 @@ Flux.@functor SetNode
 Base.length(m::SetNode) = length(m.feature)
 
 """
-	logpdf(node, x)
+    logpdf(node, x)
 
-	log-likelihood of Mill bagnode `x` of a set model `node`
+    log-likelihood of Mill bagnode `x` of a set model `node`
 """
 function Distributions.logpdf(m::SetNode, x::Mill.BagNode)
     lp_inst = logpdf(m.feature, x.data)  # might not work on nonvector data

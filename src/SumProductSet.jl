@@ -10,8 +10,8 @@ using LinearAlgebra: det, diagm, cholesky
 import Mill
 
 function logsumexp(x; dims = :)
-	xm = maximum(x, dims = dims)
-	log.(sum(exp.(x .- xm), dims = dims)) .+ xm
+    xm = maximum(x, dims = dims)
+    log.(sum(exp.(x .- xm), dims = dims)) .+ xm
 end
 
 logsoftmax(x; dims = :) = x .- logsumexp(x, dims = dims)
@@ -19,7 +19,7 @@ softmax(x; dims = :) = exp.(logsoftmax(x, dims = dims))
 
 function logfactorial(x::Real)
     # sum(log.(collect(2:x)); init=zero(Float64))
-	sum(log.(collect(2:x)))
+    sum(log.(collect(2:x)))
 end
 
 include("distributions.jl")
