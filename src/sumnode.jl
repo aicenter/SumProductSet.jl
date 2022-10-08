@@ -11,15 +11,14 @@ end
 
 """
 	SumNode(components::Vector, prior::Vector)
-	SumNode(components::Vector) 
+	SumNode(components::Vector; dtype::Type{<:Real}) 
 
 	Mixture of components. Each component has to be a valid pdf. If prior vector 
 	is not provided, it is initialized uniformly.
 """
-function SumNode(components::Vector) 
+function SumNode(components::Vector; dtype::Type{<:Real}=Float64) 
 	n = length(components); 
-	# SumNode(components, rand(Float64, n))
-	SumNode(components, fill(1e0, n))
+	SumNode(components, ones(dtype, n))
 end
 
 Base.getindex(m::SumNode, i ::Int) = (c = m.components[i], p = m.prior[i])
@@ -99,8 +98,3 @@ end
 HierarchicalUtils.nodeshow(io::IO, ::SumNode) = print(io, "SumNode")
 HierarchicalUtils.NodeType(::Type{<:SumNode}) = InnerNode()
 HierarchicalUtils.printchildren(node::SumNode) = tuple(node.components...)
-
-
-####
-#	Functions for comparibility with Mill.jl
-####
