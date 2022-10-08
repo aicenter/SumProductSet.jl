@@ -55,8 +55,7 @@ _sampleids(m::SumNode) = _sampleids(m, 1)[]
 
 function Base.rand(m::SumNode, n::Int)
     if n == 0 
-        # fix fixed Float64 type
-        return zeros(Float64, length(m), 0)
+        return zeros(eltype(m.prior), length(m), 0)
     else
         return hcat(rand.(m.components[_sampleids(m, n)])...)
     end
