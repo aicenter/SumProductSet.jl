@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-#SBATCH --array=1-18
+#SBATCH --array=1-320
 #SBATCH --mem=8G
 #SBATCH --time=24:00:00
 #SBATCH --nodes=1 --ntasks-per-node=1 --cpus-per-task=1
