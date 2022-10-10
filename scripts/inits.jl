@@ -231,11 +231,10 @@ function main_slurm_real()
         [:full, :diag],
         [100],
         [[64e-2, 16e-2, 2e-1]],
-        collect(1:10))
+        collect(1:20))
 
         # nb, ni, μinit, Σinit, Σtype, nepochs, train/val/test split, seeds
-        # |grid| = 4 * 2 * 3 = 18
-        # n_dataset * |grid| = 20 * 18 = 360 < max_jobs = 400
+        # |grid| = 2 * 2 * 2 * 2 * 20 = 320 < max_jobs = 400
         # TO DO: add learning rate to grid
 
     produce_or_load(datadir("$(savefolder)/results"),
