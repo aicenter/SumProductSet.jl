@@ -1,7 +1,6 @@
 #!/usr/bin/env sh
 #SBATCH --array=1-320
 #SBATCH --mem=8G
-#SBATCH --time=24:00:00
 #SBATCH --nodes=1 --ntasks-per-node=1 --cpus-per-task=1
 #SBATCH --partition=cpu
 #SBATCH --out=/home/rektomar/logs/%x-%j.out
@@ -85,10 +84,10 @@ end
 function experiment(taskid::Int, dirdata::String, dataset::String, grid)
 
     mtype = :setmixture 
-    nb, ni, μinit, Σinit, Σtype, nepoc, split, seed = collect(grid)[taskid]
+    nb, ni, minit, cinit, ctype, nepoc, split, seed = collect(grid)[taskid]
     Random.seed!(seed)
 
-    (; dirdata, dataset, split, seed, nb, ni, nepoc, μinit, Σinit, Σtype, mtype, itype=Int64, ftype=Float64, ngrid=length(grid))
+    (; dirdata, dataset, split, seed, nb, ni, nepoc, minit, cinit, ctype, mtype, itype=Int64, ftype=Float64, ngrid=length(grid))
 end
 function preprocess(x::AbstractArray{Tr,2}, y::AbstractArray{Ti,1}, b::AbstractArray,
     i::AbstractArray{Ti,1}=collect(1:length(b)), split::AbstractArray{Tr,1}=Tr.([64e-2, 16e-2, 2e-1])) where {Tr<:Real,Ti<:Int}
@@ -143,10 +142,16 @@ function load_real_data(config::NamedTuple)
     return data..., config
 end
 function estimate(config::NamedTuple)
-    (; dataset, seed, nb, ni, nepoc, μinit, Σinit, Σtype, ftype) = config
+    (; dataset, seed, nb, ni, nepoc, minit, cinit, ctype, ftype) = config
     x_trn, x_val, x_tst, y_trn, y_val, y_tst, config = load_real_data(config)
 
+    # renaming model params
     dtype = ftype
+    μinit = minit
+    Σinit = cinit
+    Σtype = ctype
+
+
     ps = (; μinit, Σinit, Σtype, dtype)
     @show dataset, nb, ni, μinit, Σinit, Σtype, dtype, seed
     d = size(x_trn.data.data, 1)
@@ -236,9 +241,12 @@ function main_slurm_real()
         # nb, ni, μinit, Σinit, Σtype, nepochs, train/val/test split, seeds
         # |grid| = 2 * 2 * 2 * 2 * 20 = 320 < max_jobs = 400
         # TO DO: add learning rate to grid
+    
+    dataset = "iidcluster"
+    datadir = "toy_pp"
 
     produce_or_load(datadir("$(savefolder)/results"),
-                    experiment(n, "toy_pp", "iidcluster", grid),
+                    experiment(n, datadir, dataset, grid),
                     estimate;
                     suffix="jld2",
                     sort=false,
