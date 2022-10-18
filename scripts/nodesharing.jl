@@ -141,7 +141,7 @@ datasets = [
 function command_line()
     s = ArgParseSettings()
     @add_arg_table s begin
-        ("--n"; arg_type = Int; default=2);
+        ("--n"; arg_type = Int; default=1);
         ("--m"; arg_type = Int; default=1);
     end
     parse_args(s)
@@ -188,7 +188,7 @@ function generate_real_data(config::NamedTuple)
     b = Vector{itype}(bags)
     i = mapreduce(seed->randperm(nbags), hcat, 1:maxseed)
 
-    tostringdict(ntuple2dict((; dataset, ndims, ndata, x, y, b, i)))
+    ntuple2dict((; dataset, ndims, ndata, x, y, b, i))
 end
 function load_real_data(config::NamedTuple)
     (; ftype, split, seed) = config
@@ -214,7 +214,7 @@ function estimate(config::NamedTuple)
     model = sharedsetmixture(nb, ni_s, ni_n, d)
     status = train!(model, x_trn, x_val, x_tst, y_trn, y_val, y_tst; niter=nepoc)
 
-    tostringdict(ntuple2dict(merge(config, status, (; model))))
+    ntuple2dict(merge(config, status, (; model)))
 end
 
 
@@ -324,7 +324,7 @@ end
 
 
 # main_local_real()
-# main_slurm_real()
+main_slurm_real()
 
 # Base.run(`clear`)
 # best_architecture_table(find_best_architecture(; s=:l_val, x=:l_tst); x=:l_tst)
