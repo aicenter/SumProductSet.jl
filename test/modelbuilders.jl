@@ -50,3 +50,23 @@ end
         @test !isnothing(logpdf(m, x2))
     end
 end
+
+@testset "hierarchical model -- logpdf forward" begin
+
+    d1 = 9
+    d2 = 11
+    pdist = () -> (_MvNormal(d1), _MvNormal(d2))
+    cdist = () -> _Poisson()
+
+    prodmodel = () -> ProductNode(pdist())
+    setmodel = () -> SetNode(prodmodel(), cdist())
+
+    m = SumNode([setmodel() for _ in 1:3])
+
+    n = 30
+    pn = Mill.ProductNode((randn(d1, n), randn(d2, n)))
+    bn = Mill.BagNode(pn, [1:5, 6:15, 16:16, 17:30])
+
+    @test !isnothing(logpdf(m, bn))
+
+end
