@@ -6,27 +6,27 @@ function gmm(n::Int, d::Int;
     SumNode([_MvNormal(d; ps...) for _ in 1:n]; dtype=dtype)
 end
 
-function setmixture(nb::Int, ni::Int, d::Int; 
+function setmixture(nb::Int, ni::Int, d::Int; cdist::Function=()->_Poisson(),
     dtype::Type{<:Real}=Float64, μinit::Symbol=:uniform, Σinit::Symbol=:unit, Σtype::Symbol=:full)
 
     ps = (; dtype, μinit, Σinit, Σtype)
     fdist() = ni > 1 ? gmm(ni, d; ps...) : _MvNormal(d; ps...)
     
     components = map(1:nb) do _
-        pc = _Poisson()
+        pc = cdist()
         pf = fdist()
         SetNode(pf, pc)
     end
     SumNode(components; dtype=dtype)
 end
 
-function sharedsetmixture(nb::Int, nis::Int, nin::Int, d::Int;
+function sharedsetmixture(nb::Int, nis::Int, nin::Int, d::Int; cdist::Function=()->_Poisson(), 
     dtype::Type{<:Real}=Float64, μinit::Symbol=:uniform, Σinit::Symbol=:unit, Σtype::Symbol=:full)
     ps = (; dtype, μinit, Σinit, Σtype)
 
     sharedcomps = [_MvNormal(d; ps...) for _ in 1:nis]
     bagcomps = map(1:nb) do _
-        pc = _Poisson()
+        pc = cdist()
         nonsharedcomps = [_MvNormal(d; ps...) for _ in 1:nin]
         pf = SumNode([nonsharedcomps; sharedcomps]; dtype)
         SetNode(pf, pc)
