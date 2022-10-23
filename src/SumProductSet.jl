@@ -28,7 +28,7 @@ include("sumnode.jl")
 include("productnode.jl")
 include("modelbuilders.jl")
 
-export _Poisson, _MvNormal, _MvNormalParams
+export _Poisson, _Categorical, _MvNormal, _MvNormalParams
 export logpdf, logjnt
 export SumNode, ProductNode, SetNode
 export randwithlabel
