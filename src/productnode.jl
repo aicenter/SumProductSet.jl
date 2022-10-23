@@ -55,10 +55,21 @@ function Distributions.logpdf(m::ProductNode, x::Mill.ArrayNode)
     o
 end
 
+# each entry of PN has to have its own model distribution!!
+function Distributions.logpdf(m::ProductNode, x::Mill.ProductNode)
+    o = logpdf(m.components[1], x.data[1])
+    for i in 2:length(m.components)
+        o += logpdf(m.components[i], x.data[i])
+    end
+    o
+end
+
 ####
 #	Functions for sampling the model
 ####
 Base.rand(m::ProductNode) = vcat([rand(p) for p in m.components]...)
+
+# TODO: add sampling for product node of type Mill.ProductNode
 
 ####
 #	Functions for making the library compatible with HierarchicalUtils
