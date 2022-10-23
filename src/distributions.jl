@@ -3,6 +3,7 @@
 ###
 include("distributions/poisson.jl")
 include("distributions/mvnormal.jl")
+include("distributions/categorical.jl")
 
 ###
 #  compatibility with Mill
@@ -14,7 +15,3 @@ Distributions.logpdf(d::Distribution, x::Mill.ArrayNode) = logpdf(d, x.data)
 ####
 HierarchicalUtils.nodeshow(io::IO, ::T) where {T<:Distribution} = print(io, "$(T)")
 HierarchicalUtils.NodeType(::Type{<:Distribution}) = LeafNode()
-
-####
-#### # Add printing for dists and setproperty
-####
