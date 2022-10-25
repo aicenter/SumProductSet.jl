@@ -18,5 +18,7 @@ Base.rand(m::_Categorical, n::Int) =  sample(1:length(m.logp), Weights(softmax(m
 # Distributions.logpdf(m::_Categorical, x::Int) = x > 0 && x <= length(m.logp)-1 ? m.logp[x] : m.logp[end]
 # Distributions.logpdf(m::_Categorical, x::Vector{Int}) = map(xi -> logpdf(m, xi), x)
 
-Distributions.logpdf(m::_Categorical, x::Int) = m.logp[x]
-Distributions.logpdf(m::_Categorical, x::Vector{Int}) = m.logp[x]
+function Distributions.logpdf(m::_Categorical, x::Union{Int, Vector{Int}})
+    logp = logsoftmax(m.logp)
+    logp[x]
+end

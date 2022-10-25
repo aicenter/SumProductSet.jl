@@ -214,7 +214,7 @@ function main_local_real()
     n = 2
 
     mb_1f = setmixture(n, 1, d)
-    mb_2f = setmixture(n, 3, d)
+    mb_2f = setmixture(n, 1, d; cdist=() -> _Categorical(50))
 
     niter = 100
 
@@ -254,7 +254,7 @@ function main_slurm_real()
 end
 
 
-# main_local_real()
+main_local_real()
 # main_slurm_real()
 
 # Base.run(`clear`)
