@@ -78,8 +78,8 @@ function status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, verbose=false)
     acc_val = acc(ŷ_val, y_val)
     acc_tst = acc(ŷ_tst, y_tst)
 
-    @printf("lkl:| %2.4e %2.4e %2.4e |    ri:| %.2f %.2f %.2f |   acc:| %.2f %.2f %.2f |\n",
-        l_trn, l_val, l_tst, ri_trn, ri_val, ri_tst, acc_trn, acc_val, acc_tst)
+    @printf("lkl:| %2.4e %2.4e %2.4e |   ri:| %.2f %.2f %.2f |  ari:| %.2f %.2f %.2f |  acc:| %.2f %.2f %.2f |\n",
+        l_trn, l_val, l_tst, ri_trn, ri_val, ri_tst, ri_trn, ri_val, ri_tst, acc_trn, acc_val, acc_tst)
 
     (; l_trn, l_val, l_tst, ari_trn, ari_val, ari_tst, ri_trn, ri_val, ri_tst, acc_trn, acc_val, acc_tst)
 end
@@ -103,10 +103,10 @@ datasets = [
     (dataset="protein",                    ndims=9,     ndata=26611,   nclass=2,    nbags=193 ) # end=26611    13
     (dataset="tiger",                      ndims=230,   ndata=1220,    nclass=2,    nbags=200 ) # end=1220     14
     (dataset="ucsb_breast_cancer",         ndims=708,   ndata=2002,    nclass=2,    nbags=58  ) # end=2002     15
-    (dataset="web_1",                      ndims=5863,  ndata=2212,    nclass=2,    nbags=75  ) # end=2212     16
-    (dataset="web_2",                      ndims=6519,  ndata=2219,    nclass=2,    nbags=75  ) # end=2219     17
-    (dataset="web_3",                      ndims=6306,  ndata=2514,    nclass=2,    nbags=75  ) # end=2514     18
-    (dataset="web_4",                      ndims=6059,  ndata=2291,    nclass=2,    nbags=75  ) # end=2291     19
+    # (dataset="web_1",                      ndims=5863,  ndata=2212,    nclass=2,    nbags=75  ) # end=2212     16
+    # (dataset="web_2",                      ndims=6519,  ndata=2219,    nclass=2,    nbags=75  ) # end=2219     17
+    # (dataset="web_3",                      ndims=6306,  ndata=2514,    nclass=2,    nbags=75  ) # end=2514     18
+    # (dataset="web_4",                      ndims=6059,  ndata=2291,    nclass=2,    nbags=75  ) # end=2291     19
     (dataset="winter_wren",                ndims=38,    ndata=10232,   nclass=2,    nbags=548 ) # end=10232    20
 ]
 
@@ -186,7 +186,8 @@ function estimate(config::NamedTuple)
     if cardtype == :poisson
         cdist = ()-> _Poisson()
     elseif cardtype == :categorical
-        k = 50
+        # cheating for now
+        k = maximum([length.(x_tst.bags); length.(x_val.bags); length.(x_trn.bags)])
         cdist = () -> _Categorical(k)
     else
         @error "Unknown cdist"
@@ -197,11 +198,15 @@ function estimate(config::NamedTuple)
     ntuple2dict(merge(config, status, (; model)))
 end
 
-function find_best_architecture(; s::Symbol=:l_val, x::Symbol=:l_tst, kwargs...)
+function result_table(; show=[:l, :ri, :ari, :acc], type=[:trn, :val, :tst], kwargs...)
     df = collect_results(datadir("analysis_mip/results"); kwargs...)
-    df = groupby(df, [:dataset, :m, :n, :mtype])
-    df = combine(df, s=>mean, x=>mean, x=>std=>:std, renamecols=false)
-    combine(df->df[argmax(df[!, s]), :], groupby(df, [:dataset, :m]))  # groupby(df, [:dataset, :mtype])
+    df = groupby(df, [:dataset, :m, :n, :mtype, :cardtype])
+
+    table_metrics = [Symbol(metric, :_, settype) for metric in show for settype in type]
+    table_operations = [op => mean for op in table_metrics]
+
+    df = combine(df, table_operations..., renamecols=false)
+    df = combine(df, :dataset, :n, :m, :cardtype, [xi => ByRow(n->round(n, sigdigits=3)) for xi in table_metrics]..., renamecols=false)
 end
 
 function main_local_real()
@@ -230,16 +235,16 @@ function main_slurm_real()
     dataset = datasets[m]
     grid = Iterators.product(
         [2],
-        [1 4 8],
+        [1 2 4 8],
         [2],
         [:poisson, :categorical],
-        [100],
+        [200],
         [[64e-2, 16e-2, 2e-1]],
-        collect(1:3))
+        collect(1:5))
 
         # n, m, covtype, nepochs, train/val/test split, seeds
-        # |grid| = 4 * 2 * 3 = 18
-        # n_dataset * |grid| = 1 * 18 = 360 < max_jobs = 400
+        # |grid| = 8 * 2 * 5 = 40
+        # n_dataset * |grid| = 10 * 400 = 400 < max_jobs = 400
         # TO DO: add learning rate to grid
 
     produce_or_load(datadir("analysis_mip/results"),
@@ -249,13 +254,12 @@ function main_slurm_real()
                     sort=false,
                     ignores=(:dirdata, :ngrid),
                     verbose=false,
-                    force = true)
-                #### force is set to TRUE !!!!!! ####
+                    force=false)
 end
 
 
 # main_local_real()
-# main_slurm_real()
+main_slurm_real()
 
 # Base.run(`clear`)
 # best_architecture_table(find_best_architecture(; s=:l_val, x=:l_tst); x=:l_tst)
