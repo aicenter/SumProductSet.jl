@@ -28,6 +28,7 @@ using PrettyTables
 using PoissonRandom
 using LinearAlgebra
 using SpecialFunctions
+using EvalMetrics
 
 
 const maxseed = 20
@@ -78,10 +79,14 @@ function status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, verbose=false)
     acc_val = acc(ŷ_val, y_val)
     acc_tst = acc(ŷ_tst, y_tst)
 
-    @printf("lkl:| %2.4e %2.4e %2.4e |   ri:| %.2f %.2f %.2f |  ari:| %.2f %.2f %.2f |  acc:| %.2f %.2f %.2f |\n",
-        l_trn, l_val, l_tst, ri_trn, ri_val, ri_tst, ri_trn, ri_val, ri_tst, acc_trn, acc_val, acc_tst)
+    mcc_trn = EvalMetrics.mcc(ConfusionMatrix(ŷ_trn .- 1, y_trn .- 1))
+    mcc_val = EvalMetrics.mcc(ConfusionMatrix(ŷ_val .- 1, y_val .- 1))
+    mcc_tst = EvalMetrics.mcc(ConfusionMatrix(ŷ_tst .- 1, y_tst .- 1))
 
-    (; l_trn, l_val, l_tst, ari_trn, ari_val, ari_tst, ri_trn, ri_val, ri_tst, acc_trn, acc_val, acc_tst)
+    @printf("lkl:| %2.4e %2.4e %2.4e |   ri:| %.2f %.2f %.2f |  ari:| %.2f %.2f %.2f |  acc:| %.2f %.2f %.2f |   mcc:| %.2f %.2f %.2f \n",
+        l_trn, l_val, l_tst, ri_trn, ri_val, ri_tst, ri_trn, ri_val, ri_tst, acc_trn, acc_val, acc_tst, mcc_trn, mcc_val, mcc_tst)
+
+    (; l_trn, l_val, l_tst, ari_trn, ari_val, ari_tst, ri_trn, ri_val, ri_tst, acc_trn, acc_val, acc_tst, mcc_trn, mcc_val, mcc_tst)
 end
 
 
@@ -186,7 +191,7 @@ function estimate(config::NamedTuple)
     if cardtype == :poisson
         cdist = ()-> _Poisson()
     elseif cardtype == :categorical
-        # cheating for now
+        # kind of cheating for now
         k = maximum([length.(x_tst.bags); length.(x_val.bags); length.(x_trn.bags)])
         cdist = () -> _Categorical(k)
     else
@@ -242,9 +247,9 @@ function main_slurm_real()
         [[64e-2, 16e-2, 2e-1]],
         collect(1:5))
 
-        # n, m, covtype, nepochs, train/val/test split, seeds
+        # n, m, covtype, cardtype, nepochs, train/val/test split, seeds
         # |grid| = 8 * 2 * 5 = 40
-        # n_dataset * |grid| = 10 * 400 = 400 < max_jobs = 400
+        # n_dataset * |grid| = 10 * 40 = 400 < max_jobs = 400
         # TO DO: add learning rate to grid
 
     produce_or_load(datadir("analysis_mip/results"),
