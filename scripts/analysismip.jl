@@ -71,14 +71,15 @@ function status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, verbose=false)
     ari_trn = randindex(y_trn, ŷ_trn)[1]
     ari_val = randindex(y_val, ŷ_val)[1]
     ari_tst = randindex(y_tst, ŷ_tst)[1]
-    ri_trn = randindex(y_trn, ŷ_trn)[1]
-    ri_val = randindex(y_val, ŷ_val)[1]
-    ri_tst = randindex(y_tst, ŷ_tst)[1]
+    ri_trn = randindex(y_trn, ŷ_trn)[2]
+    ri_val = randindex(y_val, ŷ_val)[2]
+    ri_tst = randindex(y_tst, ŷ_tst)[2]
 
     acc_trn = acc(ŷ_trn, y_trn)
     acc_val = acc(ŷ_val, y_val)
     acc_tst = acc(ŷ_tst, y_tst)
 
+    # need to convert labels [1, 2] to [0, 1]
     mcc_trn = EvalMetrics.mcc(ConfusionMatrix(ŷ_trn .- 1, y_trn .- 1))
     mcc_val = EvalMetrics.mcc(ConfusionMatrix(ŷ_val .- 1, y_val .- 1))
     mcc_tst = EvalMetrics.mcc(ConfusionMatrix(ŷ_tst .- 1, y_tst .- 1))
@@ -118,7 +119,7 @@ datasets = [
 function command_line()
     s = ArgParseSettings()
     @add_arg_table s begin
-        ("--n"; arg_type = Int; default=6);
+        ("--n"; arg_type = Int; default=8);
         ("--m"; arg_type = Int; default=1);
     end
     parse_args(s)
@@ -263,13 +264,8 @@ function main_slurm_real()
 end
 
 
-<<<<<<< HEAD
 # main_local_real()
 main_slurm_real()
-=======
-main_local_real()
-# main_slurm_real()
->>>>>>> 212648243df0dedaeccc834e4c31d91f6049fb60
 
 # Base.run(`clear`)
 # best_architecture_table(find_best_architecture(; s=:l_val, x=:l_tst); x=:l_tst)
