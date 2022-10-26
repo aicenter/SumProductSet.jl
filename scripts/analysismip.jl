@@ -224,7 +224,7 @@ function main_local_real()
     n = 2
 
     mb_1f = setmixture(n, 1, d)
-    mb_2f = setmixture(n, 3, d)
+    mb_2f = setmixture(n, 1, d; cdist=() -> _Categorical(50))
 
     niter = 100
 
@@ -263,8 +263,13 @@ function main_slurm_real()
 end
 
 
+<<<<<<< HEAD
 # main_local_real()
 main_slurm_real()
+=======
+main_local_real()
+# main_slurm_real()
+>>>>>>> 212648243df0dedaeccc834e4c31d91f6049fb60
 
 # Base.run(`clear`)
 # best_architecture_table(find_best_architecture(; s=:l_val, x=:l_tst); x=:l_tst)
