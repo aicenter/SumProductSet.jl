@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
-#SBATCH --array=1-18
-#SBATCH --mem=8G
+#SBATCH --array=1-40
+#SBATCH --mem=16G
 #SBATCH --time=24:00:00
 #SBATCH --nodes=1 --ntasks-per-node=1 --cpus-per-task=1
 #SBATCH --partition=cpu
@@ -271,7 +271,7 @@ function main_slurm_real()
         [1 2 4 8],
         [:full],
         [:poisson, :categorical],
-        [100],
+        [1000],
         [[64e-2, 16e-2, 2e-1]],
         collect(1:5))
 
