@@ -4,9 +4,9 @@
 #SBATCH --time=24:00:00
 #SBATCH --nodes=1 --ntasks-per-node=1 --cpus-per-task=1
 #SBATCH --partition=cpu
-#SBATCH --out=/home/rektomar/logs/%x-%j.out
+#SBATCH --out=/home/rektomar/logs/analysismip/%x-%j.out
 #= 
-srun julia scripts/real.jl --n $SLURM_ARRAY_TASK_ID --m $1
+srun julia scripts/analysismip.jl --n $SLURM_ARRAY_TASK_ID --m $1
 exit
 # =#
 
@@ -29,31 +29,54 @@ using PoissonRandom
 using LinearAlgebra
 using SpecialFunctions
 using EvalMetrics
+using ValueHistories
 
 
 const maxseed = 20
 const path = "/home/$(ENV["USER"])/datasets/clean/mill"
 
+function loss(m::SumNode, x::Mill.BagNode, y::Vector{Int})
+    -mean( logjnt(m, x)[CartesianIndex.(y, 1:length(y))])
+end 
 
-function train!(m::SumNode{T, <:SetNode}, x_trn::S, x_val::S, x_tst::S, y_trn, y_val, y_tst; niter::Int=100, opt=ADAM(0.01)) where {T, S<:Mill.BagNode}
-    # @printf("model: %s:\n", m.name)
+function update_history!(history::MVHistory, iteration::Int, status::NamedTuple) 
+    for (key, value) in pairs(status)
+        push!(history, key, iteration, value)
+    end
+    history
+end
 
-    y_trn = map(y->maximum(y), y_trn)
-    y_val = map(y->maximum(y), y_val)
-    y_tst = map(y->maximum(y), y_tst)
+function train!(m::SumNode{T, <:SetNode}, x_trn::Mill.BagNode, y_trn::Vector{Int}; cb=()->(), niter::Int=200, tol::Real=1e-5, opt=ADAM(0.025)) where T
 
+    history = MVHistory()
+    l_old = -Float64(Inf)
     ps = Flux.params(m)
 
-    status = status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, true)
+    status = cb()
+    update_history!(history, 0, status)
 
-    for _ in 1:niter
-        gs = gradient(()->-mean( logjnt(m, x_trn)[CartesianIndex.(y_trn, 1:length(y_trn))]), ps)         
-        # gs = gradient(()->-mean(logpdf(m, x_trn)), ps)         
+    for iter in 1:niter
+        gs = gradient(()-> loss(m, x_trn, y_trn), ps)            
         Flux.Optimise.update!(opt, ps, gs)
-        status = status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, true)
+        status = cb()
+        update_history!(history, iter, status)
+
+        l_trn = status[:l_trn]
+        l_dif = l_trn - l_old
+        l_old = l_trn
+
+        if l_dif < 0 
+            @info "STOPPED after $(iter) steps, obtained negative likelihood increment"
+            break
+        end
+        if abs(l_dif) < tol
+            @info "STOPPED after $(iter) steps, reached minimum improvement tolerance"
+            break
+        end
+
     end
 
-    return status
+    return history
 end
 
 acc(prediction, target) = mean(prediction .== target)    
@@ -85,7 +108,7 @@ function status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, verbose=false)
     mcc_tst = EvalMetrics.mcc(ConfusionMatrix(ŷ_tst .- 1, y_tst .- 1))
 
     @printf("lkl:| %2.4e %2.4e %2.4e |   ri:| %.2f %.2f %.2f |  ari:| %.2f %.2f %.2f |  acc:| %.2f %.2f %.2f |   mcc:| %.2f %.2f %.2f \n",
-        l_trn, l_val, l_tst, ri_trn, ri_val, ri_tst, ri_trn, ri_val, ri_tst, acc_trn, acc_val, acc_tst, mcc_trn, mcc_val, mcc_tst)
+        l_trn, l_val, l_tst, ri_trn, ri_val, ri_tst, ari_trn, ari_val, ari_tst, acc_trn, acc_val, acc_tst, mcc_trn, mcc_val, mcc_tst)
 
     (; l_trn, l_val, l_tst, ari_trn, ari_val, ari_tst, ri_trn, ri_val, ri_tst, acc_trn, acc_val, acc_tst, mcc_trn, mcc_val, mcc_tst)
 end
@@ -103,9 +126,9 @@ datasets = [
     (dataset="musk_2",                     ndims=166,   ndata=6598,    nclass=2,    nbags=102 ) # end=6598     7
     (dataset="mutagenesis_1",              ndims=7,     ndata=10486,   nclass=2,    nbags=188 ) # end=10486    8
     (dataset="mutagenesis_2",              ndims=7,     ndata=2132,    nclass=2,    nbags=42  ) # end=2132     9
-    (dataset="newsgroups_1",               ndims=200,   ndata=5443,    nclass=2,    nbags=100 ) # end=5443     10
-    (dataset="newsgroups_2",               ndims=200,   ndata=3094,    nclass=2,    nbags=100 ) # end=3094     11
-    (dataset="newsgroups_3",               ndims=200,   ndata=5175,    nclass=2,    nbags=100 ) # end=5175     12
+    # (dataset="newsgroups_1",               ndims=200,   ndata=5443,    nclass=2,    nbags=100 ) # end=5443     10
+    # (dataset="newsgroups_2",               ndims=200,   ndata=3094,    nclass=2,    nbags=100 ) # end=3094     11
+    # (dataset="newsgroups_3",               ndims=200,   ndata=5175,    nclass=2,    nbags=100 ) # end=5175     12
     (dataset="protein",                    ndims=9,     ndata=26611,   nclass=2,    nbags=193 ) # end=26611    13
     (dataset="tiger",                      ndims=230,   ndata=1220,    nclass=2,    nbags=200 ) # end=1220     14
     (dataset="ucsb_breast_cancer",         ndims=708,   ndata=2002,    nclass=2,    nbags=58  ) # end=2002     15
@@ -127,7 +150,7 @@ end
 function experiment(id::Int, dirdata::String, dataset_attributes::NamedTuple, grid)
     (; dataset, ndims, ndata, nbags) = dataset_attributes
 
-    mtype = :setclassifier # fixed for now
+    mtype = :setclassifier
     n, m, ctype, cardtype, nepoc, split, seed = collect(grid)[id]
     Random.seed!(seed)
 
@@ -185,9 +208,12 @@ function estimate(config::NamedTuple)
     (; dataset, n, m, seed, nepoc, cardtype) = config
     x_trn, x_val, x_tst, y_trn, y_val, y_tst, config = load_real_data(config)
 
+    y_trn = map(y->maximum(y), y_trn)
+    y_val = map(y->maximum(y), y_val)
+    y_tst = map(y->maximum(y), y_tst)
+
     @show dataset, n, m, cardtype, seed
 
-    # model = getfield(@__MODULE__, mtype){ftype,ctype}(n, m, size(x_trn.data.data, 1))
     d = size(x_trn.data.data, 1)
     if cardtype == :poisson
         cdist = ()-> _Poisson()
@@ -196,12 +222,13 @@ function estimate(config::NamedTuple)
         k = maximum([length.(x_tst.bags); length.(x_val.bags); length.(x_trn.bags)])
         cdist = () -> _Categorical(k)
     else
-        @error "Unknown cdist"
+        @error "Unknown cardinality distribution"
     end
-    model = setmixture(n, m, d; cdist=cdist)
-    status = train!(model, x_trn, x_val, x_tst, y_trn, y_val, y_tst; niter=nepoc)
 
-    ntuple2dict(merge(config, status, (; model)))
+    model = setmixture(n, m, d; cdist=cdist)
+    history = train!(model, x_trn, y_trn; cb=()->status!(model, x_trn, x_val, x_tst, y_trn, y_val, y_tst), niter=nepoc)
+
+    ntuple2dict(merge(config, (; history, model)))
 end
 
 function result_table(; show=[:l, :ri, :ari, :acc], type=[:trn, :val, :tst], kwargs...)
@@ -230,8 +257,8 @@ function main_local_real()
     niter = 100
 
     # train!(deepcopy(mi_1f), x_trn, x_val, x_tst, y_trn, y_val, y_tst; niter=niter)
-    train!(deepcopy(mb_1f), x_trn, x_val, x_tst, y_trn, y_val, y_tst; niter=niter)
-    train!(deepcopy(mb_2f), x_trn, x_val, x_tst, y_trn, y_val, y_tst; niter=niter)
+    train!(deepcopy(mb_1f), x_trn, y_trn; niter=niter)
+    train!(deepcopy(mb_2f), x_trn, y_trn; niter=niter)
 
     nothing
 end
@@ -242,9 +269,9 @@ function main_slurm_real()
     grid = Iterators.product(
         [2],
         [1 2 4 8],
-        [2],
+        [:full],
         [:poisson, :categorical],
-        [200],
+        [100],
         [[64e-2, 16e-2, 2e-1]],
         collect(1:5))
 
