@@ -29,6 +29,7 @@ using PoissonRandom
 using LinearAlgebra
 using SpecialFunctions
 using EvalMetrics
+using ValueHistories
 
 
 const maxseed = 20
@@ -38,28 +39,27 @@ function loss(m::SumNode, x::Mill.BagNode, y::Vector{Int})
     -mean( logjnt(m, x)[CartesianIndex.(y, 1:length(y))])
 end 
 
-function update_history!(history::NamedTuple, status) 
+function update_history!(history::MVHistory, iteration::Int, status::NamedTuple) 
     for (key, value) in pairs(status)
-        push!(history[key], value)
+        push!(history, key, iteration, value)
     end
     history
 end
 
-function train!(m::SumNode{T, <:SetNode}, x_trn::Mill.BagNode, y_trn::Vector{Int}; cb=()->(), niter::Int=200, tol::Real=1e-5, opt=ADAM(0.02)) where T
+function train!(m::SumNode{T, <:SetNode}, x_trn::Mill.BagNode, y_trn::Vector{Int}; cb=()->(), niter::Int=200, tol::Real=1e-5, opt=ADAM(0.025)) where T
 
+    history = MVHistory()
     l_old = -Float64(Inf)
     ps = Flux.params(m)
 
-    @info "Starting training"
     status = cb()
-    history = NamedTuple(key => [value] for (key, value) in pairs(status) )
-    
+    update_history!(history, 0, status)
+
     for iter in 1:niter
         gs = gradient(()-> loss(m, x_trn, y_trn), ps)            
         Flux.Optimise.update!(opt, ps, gs)
-
         status = cb()
-        update_history!(history, status)
+        update_history!(history, iter, status)
 
         l_trn = status[:l_trn]
         l_dif = l_trn - l_old
@@ -73,6 +73,7 @@ function train!(m::SumNode{T, <:SetNode}, x_trn::Mill.BagNode, y_trn::Vector{Int
             @info "STOPPED after $(iter) steps, reached minimum improvement tolerance"
             break
         end
+
     end
 
     return history
@@ -101,7 +102,7 @@ function status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, verbose=false)
     acc_val = acc(ŷ_val, y_val)
     acc_tst = acc(ŷ_tst, y_tst)
 
-    # convert labels [1, 2] to [0, 1]
+    # need to convert labels [1, 2] to [0, 1]
     mcc_trn = EvalMetrics.mcc(ConfusionMatrix(ŷ_trn .- 1, y_trn .- 1))
     mcc_val = EvalMetrics.mcc(ConfusionMatrix(ŷ_val .- 1, y_val .- 1))
     mcc_tst = EvalMetrics.mcc(ConfusionMatrix(ŷ_tst .- 1, y_tst .- 1))
@@ -141,7 +142,7 @@ datasets = [
 function command_line()
     s = ArgParseSettings()
     @add_arg_table s begin
-        ("--n"; arg_type = Int; default=1);
+        ("--n"; arg_type = Int; default=17);
         ("--m"; arg_type = Int; default=1);
     end
     parse_args(s)
@@ -156,36 +157,25 @@ function experiment(id::Int, dirdata::String, dataset_attributes::NamedTuple, gr
     (; dirdata, dataset, ndims, ndata, nbags, split, seed, n, m, cardtype, nepoc, mtype, covtype, itype=Int64, ftype=Float64, ngrid=length(grid))
 end
 function preprocess(x::AbstractArray{Tr,2}, y::AbstractArray{Ti,1}, b::AbstractArray{Ti,1}, i::AbstractArray{Ti,1}=collect(1:maximum(b)), split::AbstractArray{Tr,1}=Tr.([64e-2, 16e-2, 2e-1])) where {Tr<:Real,Ti<:Int}
-    # filter feature dimensions with low variance
     x = x[vec(std(x, dims=2) .> Tr(1e-5)), :]
 
     x = Mill.BagNode(x, b)
     n = cumsum(map(n->ceil(Ti, n), split*nobs(x)))
 
-    # created train/val/test split
     x_trn = x[i[1:n[1]]]
     x_val = x[i[n[1]+1:n[2]]]
     x_tst = x[i[n[2]+1:end]]
 
-    # calculate standartization statistics from train data
     mn = mean(x_trn.data.data, dims=2)
     sd = std(x_trn.data.data, dims=2)
     f(z) = (z .- mn) ./ sd
-    
-    # standartize all splits 
     x_trn = Mill.mapdata(f, x_trn)
     x_val = Mill.mapdata(f, x_val) 
     x_tst = Mill.mapdata(f, x_tst)  
 
-    # get labels corresponding to each split
     y_trn = map(j->y[j], x.bags[i[1:n[1]]])
     y_val = map(j->y[j], x.bags[i[n[1]+1:n[2]]])
     y_tst = map(j->y[j], x.bags[i[n[2]+1:end]])
-
-    # get bag labels
-    y_trn = map(y->maximum(y), y_trn)
-    y_val = map(y->maximum(y), y_val)
-    y_tst = map(y->maximum(y), y_tst)
 
     return x_trn, x_val, x_tst, y_trn, y_val, y_tst
 end
@@ -215,10 +205,14 @@ function load_real_data(config::NamedTuple)
 end
 
 function estimate(config::NamedTuple)
-    (; dataset, nb, ni, seed, covtype, nepoc, cardtype) = config
+    (; dataset, n, m, seed, covtype, nepoc, cardtype) = config
     x_trn, x_val, x_tst, y_trn, y_val, y_tst, config = load_real_data(config)
 
-    @show dataset, nb, ni, covtype, cardtype, seed
+    y_trn = map(y->maximum(y), y_trn)
+    y_val = map(y->maximum(y), y_val)
+    y_tst = map(y->maximum(y), y_tst)
+
+    @show dataset, n, m, cardtype, seed
 
     d = size(x_trn.data.data, 1)
     if cardtype == :poisson
@@ -234,10 +228,9 @@ function estimate(config::NamedTuple)
     model = setmixture(n, m, d; cdist=cdist, Σtype=covtype)
     history = train!(model, x_trn, y_trn; cb=()->status!(model, x_trn, x_val, x_tst, y_trn, y_val, y_tst), niter=nepoc)
 
-    ntuple2dict(merge(config, (; history..., model)))
+    ntuple2dict(merge(config, (; history, model)))
 end
 
-# ranktable for old version of analysismip.jl
 function result_table(; to_show=[:l, :ri, :ari, :acc], type=[:trn, :val, :tst], kwargs...)
     df = collect_results(datadir("analysis_mip/results"); kwargs...)
     df = transform(df, :history => ByRow(x -> NamedTuple(key => last(x, key)[2] for key in keys(x) ) ) )
@@ -254,22 +247,22 @@ function result_table(; to_show=[:l, :ri, :ari, :acc], type=[:trn, :val, :tst], 
 end
 
 function main_local_real()
-    Random.seed!(1)
+    # Random.seed!(1)
 
     @load "$(path)/brown_creeper.bson" data labs bags
-    perm = randperm(maximum(bags))
-    x_trn, x_val, x_tst, y_trn, y_val, y_tst = preprocess(Float64.(data), labs, bags, perm)
+    x_trn, x_val, x_tst, y_trn, y_val, y_tst = preprocess(Float64.(data), labs, bags)
 
     d = size(x_trn.data.data, 1)
-    nb = 2
+    n = 2
 
-    mb_1 = setmixture(nb, 1, d)
-    mb_2 = setmixture(nb, 1, d; cdist=() -> _Categorical(50))
+    mb_1f = setmixture(n, 1, d)
+    mb_2f = setmixture(n, 1, d; cdist=() -> _Categorical(50))
 
-    niter = 500
+    niter = 100
 
-    train!(mb_1, x_trn, y_trn; niter=niter, cb=()->status!(mb_1, x_trn, x_val, x_tst, y_trn, y_val, y_tst))
-    train!(mb_2, x_trn, y_trn; niter=niter, cb=()->status!(mb_2, x_trn, x_val, x_tst, y_trn, y_val, y_tst))
+    # train!(deepcopy(mi_1f), x_trn, x_val, x_tst, y_trn, y_val, y_tst; niter=niter)
+    train!(deepcopy(mb_1f), x_trn, y_trn; niter=niter)
+    train!(deepcopy(mb_2f), x_trn, y_trn; niter=niter)
 
     nothing
 end
@@ -287,7 +280,9 @@ function main_slurm_real()
         collect(1:5))
 
         # n, m, covtype, cardtype, nepochs, train/val/test split, seeds
-        # |grid| = 4 * 2 * 2 * 5 = 80
+        # |grid| = 8 * 2 * 5 = 40
+        # n_dataset * |grid| = 10 * 40 = 400 < max_jobs = 400
+        # TO DO: add learning rate to grid
 
     produce_or_load(datadir("analysis_mip/results"),
                     experiment(n, dirdata, dataset, grid),
@@ -300,7 +295,7 @@ function main_slurm_real()
 end
 
 
-main_local_real()
+# main_local_real()
 # main_slurm_real()
 
 # Base.run(`clear`)
