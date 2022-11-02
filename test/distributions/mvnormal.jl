@@ -27,9 +27,9 @@ end
         x1 = randn(dtype, d, n)
         x2 = randn(dtype, d)
 
-        @test length(logpdf(m, x1)) == size(x1, 2)
-        @test length(logpdf(m, x2)) == size(x2, 2)
-        @test typeof(sum(logpdf(m, x1))) == dtype
+        @test length(SumProductSet.logpdf(m, x1)) == size(x1, 2)
+        @test length(SumProductSet.logpdf(m, x2)) == size(x2, 2)
+        @test typeof(sum(SumProductSet.logpdf(m, x1))) == dtype
     end
 end
 
@@ -55,8 +55,8 @@ end
     x1 = rand(m1, n) 
     x2 = rand(m2, n)
 
-    @test logpdf(m1, x1) ≈ logpdf(m2, x1)
-    @test logpdf(m1, x2) ≈ logpdf(m2, x2)
+    @test Distributions.logpdf(m1, x1) ≈ SumProductSet.logpdf(m2, x1)
+    @test Distributions.logpdf(m1, x2) ≈ SumProductSet.logpdf(m2, x2)
 end
 
 @testset "_MvNormal --- integration with Flux" begin
@@ -68,6 +68,6 @@ end
         ps = Flux.params(m)
         @test !isempty(ps)
         x = rand(m, 10)
-        @test !isnothing( gradient(() -> sum(logpdf(m, x)), ps) )
+        @test !isnothing( gradient(() -> sum(SumProductSet.logpdf(m, x)), ps) )
     end
 end

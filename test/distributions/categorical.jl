@@ -5,8 +5,8 @@
     x1 = rand(1:n, 100)
     x2 = 6
 
-    @test size(logpdf(m, x1)) == size(x1)
-    @test size(logpdf(m, x2)) == size(x2)
+    @test size(SumProductSet.logpdf(m, x1)) == size(x1)
+    @test size(SumProductSet.logpdf(m, x2)) == size(x2)
 end
 
 @testset "_Categorical --- rand sampling" begin
@@ -24,6 +24,6 @@ end
 
     @test !isempty(ps)
     x = rand(1:n, 20)
-    @test !isnothing(gradient(() -> sum(logpdf(m, x)), ps))
+    @test !isnothing(gradient(() -> sum(SumProductSet.logpdf(m, x)), ps))
 
 end
