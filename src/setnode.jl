@@ -19,7 +19,7 @@ Base.length(m::SetNode) = length(m.feature)
 
     log-likelihood of Mill bagnode `x` of a set model `node`
 """
-function Distributions.logpdf(m::SetNode, x::Mill.BagNode)
+function logpdf(m::SetNode, x::Mill.BagNode)
     lp_inst = logpdf(m.feature, x.data)  # might not work on nonvector data
     mapreduce(b->logpdf(m.cardinality, length(b)) + sum(lp_inst[b]) + logfactorial(length(b)), vcat, x.bags)
 end

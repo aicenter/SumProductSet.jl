@@ -1,6 +1,3 @@
-using SumProductSet, Test, Distributions, Flux
-using LinearAlgebra: diagm
-
 
 const grid = Iterators.product(
     [1, 2, 11, 50],

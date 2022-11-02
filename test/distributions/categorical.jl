@@ -1,4 +1,3 @@
-using SumProductSet, Test, Distributions, Flux
 
 @testset "_Categorical --- logpdf forward" begin
 	n = 10

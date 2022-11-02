@@ -1,5 +1,5 @@
 
-mutable struct _Poisson{T} <: DiscreteUnivariateDistribution where {T<:Real}
+mutable struct _Poisson{T} <: _Distribution{T}
     logλ::Array{T, 1}
 end
 Flux.@functor _Poisson
@@ -13,6 +13,6 @@ Base.length(m::_Poisson) = length(m.logλ)
 
 _poisson_logpdf(logλ, x) = x .* logλ .- exp(logλ) .- logfactorial.(x)
 
-function Distributions.logpdf(m::_Poisson, x::Real)
+function logpdf(m::_Poisson, x::Real)
     mapreduce(logλ -> _poisson_logpdf(logλ, x), +, m.logλ)
 end

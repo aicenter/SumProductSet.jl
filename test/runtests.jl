@@ -1,4 +1,7 @@
-using SumProductSet, Test, Distributions
+using Flux
+using Test
+using Distributions
+# using SumProductSet
 
 include("distributions/mvnormal.jl")
 include("distributions/poisson.jl")

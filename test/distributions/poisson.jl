@@ -1,4 +1,3 @@
-using SumProductSet, Test, Distributions, Flux
 
 @testset "_Poisson --- logpdf forward" begin
 	m = _Poisson(log(5))
