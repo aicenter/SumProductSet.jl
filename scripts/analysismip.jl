@@ -53,7 +53,7 @@ function train!(m::SumNode{T, <:SetNode}, x_trn::Mill.BagNode, y_trn::Vector{Int
     @info "Starting training"
     status = cb()
     history = NamedTuple(key => [value] for (key, value) in pairs(status) )
-    
+
     for iter in 1:niter
         gs = gradient(()-> loss(m, x_trn, y_trn), ps)            
         Flux.Optimise.update!(opt, ps, gs)
@@ -113,7 +113,6 @@ function status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, verbose=false)
 end
 
 
-
 dirdata = "mill"
 datasets = [
     (dataset="brown_creeper",              ndims=38,    ndata=10232,   nclass=2,    nbags=548 ) # end=10232    1
@@ -140,8 +139,10 @@ datasets = [
 
 function command_line()
     s = ArgParseSettings()
+    # n - idx of cofing in grid
+    # m - idx of dataset
     @add_arg_table s begin
-        ("--n"; arg_type = Int; default=1);
+        ("--n"; arg_type = Int; default=4);
         ("--m"; arg_type = Int; default=1);
     end
     parse_args(s)
@@ -150,10 +151,10 @@ function experiment(id::Int, dirdata::String, dataset_attributes::NamedTuple, gr
     (; dataset, ndims, ndata, nbags) = dataset_attributes
 
     mtype = :setclassifier
-    n, m, covtype, cardtype, nepoc, split, seed = collect(grid)[id]
+    nb, ni, covtype, cardtype, nepoc, split, seed = collect(grid)[id]
     Random.seed!(seed)
 
-    (; dirdata, dataset, ndims, ndata, nbags, split, seed, n, m, cardtype, nepoc, mtype, covtype, itype=Int64, ftype=Float64, ngrid=length(grid))
+    (; dirdata, dataset, ndims, ndata, nbags, split, seed, nb, ni, cardtype, nepoc, mtype, covtype, itype=Int64, ftype=Float64, ngrid=length(grid))
 end
 function preprocess(x::AbstractArray{Tr,2}, y::AbstractArray{Ti,1}, b::AbstractArray{Ti,1}, i::AbstractArray{Ti,1}=collect(1:maximum(b)), split::AbstractArray{Tr,1}=Tr.([64e-2, 16e-2, 2e-1])) where {Tr<:Real,Ti<:Int}
     # filter feature dimensions with low variance
@@ -231,21 +232,19 @@ function estimate(config::NamedTuple)
         @error "Unknown cardinality distribution"
     end
 
-    model = setmixture(n, m, d; cdist=cdist, Σtype=covtype)
+    model = setmixture(nb, ni, d; cdist=cdist, Σtype=covtype)
     history = train!(model, x_trn, y_trn; cb=()->status!(model, x_trn, x_val, x_tst, y_trn, y_val, y_tst), niter=nepoc)
 
-    ntuple2dict(merge(config, (; history..., model)))
+    ntuple2dict(merge(config, history, (; model)))
 end
 
 # ranktable for old version of analysismip.jl
 function result_table(; to_show=[:l, :ri, :ari, :acc], type=[:trn, :val, :tst], kwargs...)
     df = collect_results(datadir("analysis_mip/results"); kwargs...)
-    df = transform(df, :history => ByRow(x -> NamedTuple(key => last(x, key)[2] for key in keys(x) ) ) )
-    df = hcat(combine(df, :dataset, :m, :cardtype, :ctype), DataFrame(df[!, :history_function]) )
     df = groupby(df, [:dataset, :m, :ctype, :cardtype])
 
     table_metrics = [Symbol(metric, :_, settype) for metric in to_show for settype in type]
-    table_operations = [op => mean for op in table_metrics]
+    table_operations = [op => x->broadcast(last, x) => mean for op in table_metrics]
 
     df = combine(df, table_operations..., renamecols=false)
     # df = combine(df, :dataset, :n, :m, :cardtype, [xi => ByRow(n->round(n, sigdigits=3)) for xi in table_metrics]..., renamecols=false)
@@ -256,20 +255,22 @@ end
 function main_local_real()
     Random.seed!(1)
 
-    @load "$(path)/brown_creeper.bson" data labs bags
+    @load "$(path)/fox.bson" data labs bags
     perm = randperm(maximum(bags))
     x_trn, x_val, x_tst, y_trn, y_val, y_tst = preprocess(Float64.(data), labs, bags, perm)
 
+    # @show size(x_trn.data.data)
+    # @show x_trn.data.data[:, 1]
     d = size(x_trn.data.data, 1)
     nb = 2
 
-    mb_1 = setmixture(nb, 1, d)
+    mb_1 = setmixture(nb, 8, d)
     mb_2 = setmixture(nb, 1, d; cdist=() -> _Categorical(50))
 
-    niter = 500
+    niter = 10
 
     train!(mb_1, x_trn, y_trn; niter=niter, cb=()->status!(mb_1, x_trn, x_val, x_tst, y_trn, y_val, y_tst))
-    train!(mb_2, x_trn, y_trn; niter=niter, cb=()->status!(mb_2, x_trn, x_val, x_tst, y_trn, y_val, y_tst))
+    # train!(mb_2, x_trn, y_trn; niter=niter, cb=()->status!(mb_2, x_trn, x_val, x_tst, y_trn, y_val, y_tst))
 
     nothing
 end
@@ -286,7 +287,7 @@ function main_slurm_real()
         [[64e-2, 16e-2, 2e-1]],
         collect(1:5))
 
-        # n, m, covtype, cardtype, nepochs, train/val/test split, seeds
+        # nb, ni, covtype, cardtype, nepochs, train/val/test split, seeds
         # |grid| = 4 * 2 * 2 * 5 = 80
 
     produce_or_load(datadir("analysis_mip/results"),
@@ -297,6 +298,14 @@ function main_slurm_real()
                     ignores=(:dirdata, :ngrid),
                     verbose=false,
                     force=false)
+end
+
+function model_analysis(dataset, ni, covtype, cardtype)
+    df = collect_results(datadir("analysis_mip/results"))
+    df = filter(row -> all([row.dataset==dataset, row.ni==ni, row.covtype==covtype, row.cardtype==cardtype]), df)
+
+    dataset = filter(d->d.dataset==df[1, :dataset], datasets)
+    #data = generate_real_data(df[1, :dataset])
 end
 
 
