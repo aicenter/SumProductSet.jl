@@ -15,6 +15,11 @@ end
 
     Mixture of components. Each component has to be a valid pdf. If prior vector 
     is not provided, it is initialized uniformly.
+
+    # Arguments
+    - `components::Vector{C}`: Vector of components of same type.
+    - `prior::Vector{T}`: Vector of log sumnode-weights, there is one weight for every component.
+    - `dtype::Type{<:Real}` : Data type which initialized `prior` should have.
 """
 function SumNode(components::Vector; dtype::Type{<:Real}=Float64) 
     n = length(components); 
@@ -29,7 +34,7 @@ Flux.@functor SumNode
 """
     logjnt(node, x)
 
-    log-jointlikelihood of samples `x` and class/cluster label of a model `node`
+    log-jointlikelihood log p(x, y) of samples `x` and class/cluster labels `y` of a model `node`
 """
 function logjnt(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode})
     lkl = transpose(hcat(map(c -> logpdf(c, x), m.components)...))
