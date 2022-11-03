@@ -106,7 +106,7 @@ function status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, verbose=false)
     mcc_val = EvalMetrics.mcc(ConfusionMatrix(ŷ_val .- 1, y_val .- 1))
     mcc_tst = EvalMetrics.mcc(ConfusionMatrix(ŷ_tst .- 1, y_tst .- 1))
 
-    @printf("lkl:| %2.4e %2.4e %2.4e |   ri:| %.2f %.2f %.2f |  ari:| %.2f %.2f %.2f |  acc:| %.2f %.2f %.2f |   mcc:| %.2f %.2f %.2f \n",
+    @printf("lkl:| %2.4e %2.4e %2.4e |   ri:| %.2f %.2f %.2f |  ari:| %.2f %.2f %.2f |  acc:| %.2f %.2f %.2f |   mcc:| %.2f %.2f %.2f | \n",
         l_trn, l_val, l_tst, ri_trn, ri_val, ri_tst, ari_trn, ari_val, ari_tst, acc_trn, acc_val, acc_tst, mcc_trn, mcc_val, mcc_tst)
 
     (; l_trn, l_val, l_tst, ari_trn, ari_val, ari_tst, ri_trn, ri_val, ri_tst, acc_trn, acc_val, acc_tst, mcc_trn, mcc_val, mcc_tst)
@@ -172,7 +172,7 @@ function preprocess(x::AbstractArray{Tr,2}, y::AbstractArray{Ti,1}, b::AbstractA
     mn = mean(x_trn.data.data, dims=2)
     sd = std(x_trn.data.data, dims=2)
     f(z) = (z .- mn) ./ sd
-    
+
     # standartize all splits 
     x_trn = Mill.mapdata(f, x_trn)
     x_val = Mill.mapdata(f, x_val) 

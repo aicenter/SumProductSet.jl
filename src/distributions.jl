@@ -1,3 +1,6 @@
+
+abstract type _Distribution{T} end
+
 ###
 #   concrete distributions import
 ###
@@ -8,10 +11,10 @@ include("distributions/categorical.jl")
 ###
 #  compatibility with Mill
 ###
-Distributions.logpdf(d::Distribution, x::Mill.ArrayNode) = logpdf(d, x.data)
+logpdf(d::_Distribution, x::Mill.ArrayNode) = logpdf(d, x.data)
 
 ####
 #  compatibility with HierarchicalUtils
 ####
-HierarchicalUtils.nodeshow(io::IO, ::T) where {T<:Distribution} = print(io, "$(T)")
-HierarchicalUtils.NodeType(::Type{<:Distribution}) = LeafNode()
+HierarchicalUtils.nodeshow(io::IO, ::T) where {T<:_Distribution} = print(io, "$(T)")
+HierarchicalUtils.NodeType(::Type{<:_Distribution}) = LeafNode()

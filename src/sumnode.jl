@@ -47,7 +47,7 @@ end
 
     log-likelihood of samples `x` of a model `node`
 """
-function Distributions.logpdf(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode})
+function logpdf(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode})
     logsumexp(logjnt(m, x), dims = 1)[:]
 end
 

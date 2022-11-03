@@ -1,5 +1,5 @@
 
-mutable struct _MvNormal{T, N} <: ContinuousMultivariateDistribution where {T<:Real, N}
+mutable struct _MvNormal{T, N} <: _Distribution{T}
     b::Array{T, 1}
     A::Array{T, N}
 end
@@ -61,16 +61,16 @@ Base.rand(m::_MvNormal) = vec(rand(m, 1))
 
 Base.length(m::_MvNormal) = length(m.b)
 
-function Distributions.logpdf(m::_MvNormal{T, 2}, x::Array{T, 2}) where {T<:Real}
+function logpdf(m::_MvNormal{T, 2}, x::Array{T, 2}) where {T<:Real}
     z = m.A * x .+ m.b
     l = log(abs(det(m.A))) .- T(5e-1)*(size(z, 1)*log(T(2e0)*T(pi)) .+ sum(z.^2, dims=1))
     l[:]
 end
-Distributions.logpdf(m::_MvNormal{T, 2}, x::Array{T, 1}) where {T<:Real} = logpdf(m, hcat(x))
+logpdf(m::_MvNormal{T, 2}, x::Array{T, 1}) where {T<:Real} = logpdf(m, hcat(x))
 
-function Distributions.logpdf(m::_MvNormal{T, 1}, x::Array{T, 2}) where {T<:Real}
+function logpdf(m::_MvNormal{T, 1}, x::Array{T, 2}) where {T<:Real}
     z = m.A .* x .+ m.b
     l = sum(log.(abs.(m.A))) .- T(5e-1)*(size(z, 1)*log(T(2e0)*T(pi)) .+ sum(z.^2, dims=1))
     l[:]
 end
-Distributions.logpdf(m::_MvNormal{T, 1}, x::Array{T, 1}) where {T<:Real} = logpdf(m, hcat(x))
+logpdf(m::_MvNormal{T, 1}, x::Array{T, 1}) where {T<:Real} = logpdf(m, hcat(x))
