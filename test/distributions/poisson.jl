@@ -1,13 +1,14 @@
 
 @testset "_Poisson --- logpdf forward" begin
 	m = _Poisson(log(5))
-    xs = [rand(1:20, 10), 2, 100., []]
+    xs = [rand(1:20, 10), 2, 100., 0]
 
     for x in xs
         @test size(SumProductSet.logpdf(m, x)) == size(x)
     end
 
-    @test SumProductSet.logpdf(_Poisson(log.([10, 5])), xs[1]) ≈ SumProductSet.logpdf(_Poisson(log(10)), xs[1]) + SumProductSet.logpdf(_Poisson(log(5)), xs[1])
+    # test for MvPoisson, but MvPoisson construction is forbidden for now
+    # @test SumProductSet.logpdf(_Poisson(log.([10, 5])), xs[1]) ≈ SumProductSet.logpdf(_Poisson(log(10)), xs[1]) + SumProductSet.logpdf(_Poisson(log(5)), xs[1])
 
 end
 
