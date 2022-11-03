@@ -46,8 +46,8 @@ end
         x1 = rand(m)
         x2 = rand(m, npts)
 
-        @test !isnothing(logpdf(m, x1))
-        @test !isnothing(logpdf(m, x2))
+        @test !isnothing(SumProductSet.logpdf(m, x1))
+        @test !isnothing(SumProductSet.logpdf(m, x2))
     end
 end
 
@@ -67,6 +67,6 @@ end
     pn = Mill.ProductNode((randn(d1, n), randn(d2, n)))
     bn = Mill.BagNode(pn, [1:5, 6:15, 16:16, 17:30])
 
-    @test !isnothing(logpdf(m, bn))
+    @test !isnothing(SumProductSet.logpdf(m, bn))
 
 end

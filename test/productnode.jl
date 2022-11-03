@@ -9,8 +9,8 @@ import Mill
     x = randn(d1 + d2, n)
     m = ProductNode((_MvNormal(d1), _MvNormal(d2)))
 
-    @test !isnothing(logpdf(m, x))
-    @test logpdf(m, x) ≈ logpdf(m[1], x[1:d1, :]) + logpdf(m[2], x[d1+1:d1+d2, :])
+    @test !isnothing(SumProductSet.logpdf(m, x))
+    @test SumProductSet.logpdf(m, x) ≈ SumProductSet.logpdf(m[1], x[1:d1, :]) + SumProductSet.logpdf(m[2], x[d1+1:d1+d2, :])
 end
 
 
@@ -28,7 +28,7 @@ end
     ps = Flux.params(m)
 
     @test !isempty(ps)
-    @test !isnothing(gradient(() -> sum(logpdf(m, x)), ps))
+    @test !isnothing(gradient(() -> sum(SumProductSet.logpdf(m, x)), ps))
 end
 
 @testset "ProductNode --- integration with Mill" begin
@@ -40,8 +40,8 @@ end
     x = Mill.ArrayNode(randn(d1 + d2, n))
     m = ProductNode((_MvNormal(d1), _MvNormal(d2)))
     
-    @test !isnothing(logpdf(m, x))
-    @test logpdf(m, x) ≈ logpdf(m[1], x.data[1:d1, :]) + logpdf(m[2], x.data[d1+1:d1+d2, :])
+    @test !isnothing(SumProductSet.logpdf(m, x))
+    @test SumProductSet.logpdf(m, x) ≈ SumProductSet.logpdf(m[1], x.data[1:d1, :]) + SumProductSet.logpdf(m[2], x.data[d1+1:d1+d2, :])
 
     # Integration with Mill.ProductNode
     d1 = 9
@@ -49,7 +49,7 @@ end
     n = 15
     x = Mill.ProductNode((randn(d1, n), randn(d2, n)))
     m = ProductNode((_MvNormal(d1), _MvNormal(d2)))
-    @test !isnothing(logpdf(m, x))
-    @test logpdf(m, x) ≈ logpdf(m[1], x.data[1]) + logpdf(m[2], x.data[2])
+    @test !isnothing(SumProductSet.logpdf(m, x))
+    @test SumProductSet.logpdf(m, x) ≈ SumProductSet.logpdf(m[1], x.data[1]) + SumProductSet.logpdf(m[2], x.data[2])
 
 end

@@ -17,8 +17,8 @@ import Mill
 
     m = SetNode(_MvNormal(d), _Poisson(1.))
 
-	@test logpdf(m, BN) != nothing
-    @test length(logpdf(m, BN)) == nbags 
+	@test !isnothing(SumProductSet.logpdf(m, BN))
+    @test length(SumProductSet.logpdf(m, BN)) == nbags 
 	@test length(m) == 2
 end
 
@@ -41,5 +41,5 @@ end
 
     @test !isempty(ps)
     x = rand(m, 10)
-    @test gradient(() -> sum(logpdf(m, x)), ps) != nothing
+    @test !isnothing(gradient(() -> sum(SumProductSet.logpdf(m, x)), ps))
 end
