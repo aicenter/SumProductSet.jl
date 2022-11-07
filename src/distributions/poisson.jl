@@ -13,7 +13,7 @@ _Poisson(logλ::Integer) = _Poisson(Float64(logλ))
 _Poisson() = _Poisson(log(rand(2:5)))
 
 Base.rand(m::_Poisson) = pois_rand(exp(m.logλ[1]))
-Base.rand(m::_Poisson, n::Int) = map(rand(m), 1:n)
+Base.rand(m::_Poisson, n::Int) = map(_->rand(m), 1:n)
 Base.length(m::_Poisson) = length(m.logλ)
 
 _poisson_logpdf(logλ, x) = x .* logλ .- exp(logλ) .- logfactorial.(x)
