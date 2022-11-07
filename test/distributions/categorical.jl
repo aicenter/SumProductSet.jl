@@ -27,3 +27,15 @@ end
     @test !isnothing(gradient(() -> sum(SumProductSet.logpdf(m, x)), ps))
 
 end
+
+@testset "_Categorical --- correctness" begin
+    p = [0.1, 0.3, 0.15, 0.45]
+    n = 100
+    m1 = Categorical(p)
+    m2 = _Categorical(log.(p))
+    x1 = rand(m1, n) 
+    x2 = rand(m2, n)
+
+    @test Distributions.logpdf.(m1, x1) ≈ SumProductSet.logpdf(m2, x1)
+    @test Distributions.logpdf.(m1, x2) ≈ SumProductSet.logpdf(m2, x2)
+end
