@@ -6,6 +6,7 @@
 #SBATCH --partition=cpu
 #SBATCH --out=/home/rektomar/logs/analysismip/%x-%j.out
 #= 
+ml --ignore_cache Julia/1.8.0-linux-x86_64
 srun julia scripts/analysismip.jl --n $SLURM_ARRAY_TASK_ID --m $1
 exit
 # =#
@@ -27,7 +28,7 @@ using BSON: @load
 using PrettyTables
 using PoissonRandom
 using LinearAlgebra
-using SpecialFunctions
+# using SpecialFunctions
 using EvalMetrics
 
 
@@ -142,7 +143,7 @@ function command_line()
     # n - idx of cofing in grid
     # m - idx of dataset
     @add_arg_table s begin
-        ("--n"; arg_type = Int; default=4);
+        ("--n"; arg_type = Int; default=16);
         ("--m"; arg_type = Int; default=1);
     end
     parse_args(s)
@@ -157,26 +158,24 @@ function experiment(id::Int, dirdata::String, dataset_attributes::NamedTuple, gr
     (; dirdata, dataset, ndims, ndata, nbags, split, seed, nb, ni, cardtype, nepoc, mtype, covtype, itype=Int64, ftype=Float64, ngrid=length(grid))
 end
 function preprocess(x::AbstractArray{Tr,2}, y::AbstractArray{Ti,1}, b::AbstractArray{Ti,1}, i::AbstractArray{Ti,1}=collect(1:maximum(b)), split::AbstractArray{Tr,1}=Tr.([64e-2, 16e-2, 2e-1])) where {Tr<:Real,Ti<:Int}
-    # filter feature dimensions with low variance
-    x = x[vec(std(x, dims=2) .> Tr(1e-5)), :]
 
-    x = Mill.BagNode(x, b)
-    n = cumsum(map(n->ceil(Ti, n), split*nobs(x)))
+    xbn = Mill.BagNode(x, b)
+    n = cumsum(map(n->ceil(Ti, n), split*nobs(xbn)))
+
+    # filter feature dimensions with low variance on train data
+    x_trn_inst = xbn[i[1:n[1]]].data.data
+    mn = mean(x_trn_inst, dims=2)[:]
+    sd = std(x_trn_inst, dims=2)[:]
+    mask = sd .> Tr(1e-5)
+
+    # standartize data
+    x = (x[mask, :] .- mn[mask]) ./ sd[mask]
+    x = Mill.BagNode(x, b)  
 
     # created train/val/test split
     x_trn = x[i[1:n[1]]]
     x_val = x[i[n[1]+1:n[2]]]
     x_tst = x[i[n[2]+1:end]]
-
-    # calculate standartization statistics from train data
-    mn = mean(x_trn.data.data, dims=2)
-    sd = std(x_trn.data.data, dims=2)
-    f(z) = (z .- mn) ./ sd
-
-    # standartize all splits 
-    x_trn = Mill.mapdata(f, x_trn)
-    x_val = Mill.mapdata(f, x_val) 
-    x_tst = Mill.mapdata(f, x_tst)  
 
     # get labels corresponding to each split
     y_trn = map(j->y[j], x.bags[i[1:n[1]]])
@@ -241,21 +240,20 @@ end
 # ranktable for old version of analysismip.jl
 function result_table(; to_show=[:l, :ri, :ari, :acc], type=[:trn, :val, :tst], kwargs...)
     df = collect_results(datadir("analysis_mip/results"); kwargs...)
-    df = groupby(df, [:dataset, :m, :ctype, :cardtype])
+    df = groupby(df, [:dataset, :ni, :ctype, :cardtype])
 
     table_metrics = [Symbol(metric, :_, settype) for metric in to_show for settype in type]
     table_operations = [op => x->broadcast(last, x) => mean for op in table_metrics]
 
     df = combine(df, table_operations..., renamecols=false)
-    # df = combine(df, :dataset, :n, :m, :cardtype, [xi => ByRow(n->round(n, sigdigits=3)) for xi in table_metrics]..., renamecols=false)
     df = combine(df->df[argmax(df[!, :l_val]), :], groupby(df, [:dataset]))
-    combine(df, :dataset, :m, :ctype, :cardtype, [xi => ByRow(n->round(n, sigdigits=3)) for xi in table_metrics]..., renamecols=false)
+    combine(df, :dataset, :ni, :ctype, :cardtype, [xi => ByRow(n->round(n, sigdigits=3)) for xi in table_metrics]..., renamecols=false)
 end
 
-function main_local_real()
+function main_local()
     Random.seed!(1)
 
-    @load "$(path)/fox.bson" data labs bags
+    @load "$(path)/brown_creeper.bson" data labs bags
     perm = randperm(maximum(bags))
     x_trn, x_val, x_tst, y_trn, y_val, y_tst = preprocess(Float64.(data), labs, bags, perm)
 
@@ -267,7 +265,7 @@ function main_local_real()
     mb_1 = setmixture(nb, 8, d)
     mb_2 = setmixture(nb, 1, d; cdist=() -> _Categorical(50))
 
-    niter = 10
+    niter = 100
 
     train!(mb_1, x_trn, y_trn; niter=niter, cb=()->status!(mb_1, x_trn, x_val, x_tst, y_trn, y_val, y_tst))
     # train!(mb_2, x_trn, y_trn; niter=niter, cb=()->status!(mb_2, x_trn, x_val, x_tst, y_trn, y_val, y_tst))
@@ -275,20 +273,20 @@ function main_local_real()
     nothing
 end
 
-function main_slurm_real()
+function main_slurm()
     @unpack n, m = command_line()
     dataset = datasets[m]
     grid = Iterators.product(
         [2],
-        [1 2 4 8],
+        [1 2 4 8 16 32],
         [:full, :diag],
         [:poisson, :categorical],
-        [1000],
+        [2000],
         [[64e-2, 16e-2, 2e-1]],
         collect(1:5))
 
         # nb, ni, covtype, cardtype, nepochs, train/val/test split, seeds
-        # |grid| = 4 * 2 * 2 * 5 = 80
+        # |grid| = 6 * 2 * 2 * 5 = 120
 
     produce_or_load(datadir("analysis_mip/results"),
                     experiment(n, dirdata, dataset, grid),
@@ -300,27 +298,5 @@ function main_slurm_real()
                     force=false)
 end
 
-function model_analysis(dataset, ni, covtype, cardtype)
-    df = collect_results(datadir("analysis_mip/results"))
-    df = filter(row -> all([row.dataset==dataset, row.ni==ni, row.covtype==covtype, row.cardtype==cardtype]), df)
-
-    dataset = filter(d->d.dataset==df[1, :dataset], datasets)
-    #data = generate_real_data(df[1, :dataset])
-end
-
-
-main_local_real()
-# main_slurm_real()
-
-# Base.run(`clear`)
-# best_architecture_table(find_best_architecture(; s=:l_val, x=:l_tst); x=:l_tst)
-# best_architecture_table(find_best_architecture(; s=:l_val, x=:i_tst); x=:i_tst)
-# best_architecture_table(find_best_architecture(; s=:l_val, x=:r_tst); x=:r_tst)
-
-# best_architecture_table(find_best_architecture(; s=:l_val, x=:l_tst, rexclude=[r"ILM"]); x=:l_tst)
-# best_architecture_table(find_best_architecture(; s=:l_val, x=:i_tst, rexclude=[r"ILM"]); x=:i_tst)
-# best_architecture_table(find_best_architecture(; s=:l_val, x=:r_tst, rexclude=[r"ILM"]); x=:r_tst)
-
-# best_architecture_table(find_best_architecture(; s=:l_val, x=:l_tst, rinclude=[r"n=2"]); x=:l_tst)
-# best_architecture_table(find_best_architecture(; s=:i_val, x=:i_tst, rinclude=[r"n=2"]); x=:i_tst)
-# best_architecture_table(find_best_architecture(; s=:r_val, x=:r_tst, rinclude=[r"n=2"]); x=:r_tst)
+# main_local()
+main_slurm()
