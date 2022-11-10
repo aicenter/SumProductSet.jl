@@ -6,7 +6,7 @@ using StatsBase
 using HierarchicalUtils
 using PoissonRandom
 using LinearAlgebra: det, diagm, cholesky
-
+using Random
 import Mill
 
 function logfactorial(x::Real)
@@ -23,7 +23,7 @@ include("modelbuilders.jl")
 export _Poisson, _Categorical, _MvNormal, _MvNormalParams
 export logpdf, logjnt
 export SumNode, ProductNode, SetNode
-export randwithlabel
+export rand, randwithlabel
 export setmixture, gmm, sharedsetmixture
 
 Base.show(io::IO, ::MIME"text/plain", n::Union{SumNode, SetNode, ProductNode, _Distribution}) = HierarchicalUtils.printtree(io, n)
