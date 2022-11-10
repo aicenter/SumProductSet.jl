@@ -68,6 +68,7 @@ end
 #	Functions for sampling the model
 ####
 Base.rand(m::ProductNode) = vcat([rand(p) for p in m.components]...)
+Base.rand(m::ProductNode, n::Int) = vcat([reshape(rand(p, n), length(p), n) for p in m.components]...)
 
 # TODO: add sampling for product node of type Mill.ProductNode
 
