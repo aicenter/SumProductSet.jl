@@ -8,7 +8,7 @@ end
 
 Flux.@functor _Categorical
 
-_Categorical(n::Int) = _Categorical(ones(Float64, n))
+_Categorical(n::Int; dtype::Type{<:Real}=Float64) = _Categorical(ones(dtype, n))
 
 
 Base.length(m::_Categorical) = 1
@@ -21,4 +21,16 @@ Base.rand(m::_Categorical, n::Int) =  sample(1:length(m.logp), Weights(softmax(m
 function logpdf(m::_Categorical, x::Union{Int, Vector{Int}})
     logp = logsoftmax(m.logp)
     logp[x]
+end
+
+# only for `x` inputs whose elements can be losslesly converted to integers
+function logpdf(m::_Categorical, x::Union{Float64, Vector{Float64}})
+    logp = logsoftmax(m.logp)
+    logp[convert.(Int64, x)]
+end
+
+# only for matrices of size 1 x n
+function logpdf(m::_Categorical, x::Matrix{Float64})
+    logp = logsoftmax(m.logp)
+    logp[convert.(Int64, vec(x))]
 end
