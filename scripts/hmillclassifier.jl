@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 #SBATCH --array=1-150
-#SBATCH --mem=16G
+#SBATCH --mem=8G
 #SBATCH --time=24:00:00
 #SBATCH --nodes=1 --ntasks-per-node=1 --cpus-per-task=1
 #SBATCH --partition=cpu
@@ -24,14 +24,13 @@ using Clustering
 using DataFrames
 using BSON: @load
 using PrettyTables
-using PoissonRandom
 using LinearAlgebra
 using EvalMetrics
 
 function hmill_classifier(x_trn; hdim=16, cdim=8, activation=:relu, aggregation=:SegmentedMeanMax, nclasses=2, nlayers=1, seed=nothing)
     isnothing(seed) ? nothing : Random.seed!(seed)
     activation = eval(activation)
-    aggregation = Mill.BagCount ∘ eval(Expr(:., :Mill, :(aggregation)))
+    aggregation = Mill.BagCount ∘ eval(Expr(:., :Mill, QuoteNode(aggregation)))
 
     extractor = Mill.reflectinmodel(x_trn, d -> Dense(d, hdim, activation), aggregation)
     
@@ -51,7 +50,7 @@ end
 const maxseed = 20
 const path = "/home/$(ENV["USER"])/datasets/clean/mill"
 
-function train!(m, x_trn::Mill.BagNode, y_trn::Vector{Int}; cb=()->(), niter::Int=200, tol::Real=1e-5, opt=ADAM(0.02)) where T
+function train!(m, x_trn::Mill.BagNode, y_trn::Vector{Int}; cb=()->(), niter::Int=200, opt=ADAM(0.02))
 
     ps = Flux.params(m)
     loss(ds, y_oh) = Flux.logitcrossentropy(m(ds), y_oh)
@@ -131,7 +130,7 @@ datasets = [
 function command_line()
     s = ArgParseSettings()
     @add_arg_table s begin
-        ("--n"; arg_type = Int; default=17);
+        ("--n"; arg_type = Int; default=1);
         ("--m"; arg_type = Int; default=1);
     end
     parse_args(s)
@@ -185,7 +184,9 @@ function generate_real_data(config::NamedTuple)
     x = Matrix{ftype}(data)
     y = Vector{itype}(labs)
     b = Vector{itype}(bags)
-    i = mapreduce(seed->randperm(nbags), hcat, 1:maxseed)
+
+    Random.seed!(1)
+    i = randperm(nbags)
 
     return ntuple2dict((; dataset, ndims, ndata, x, y, b, i))
 end
@@ -198,7 +199,7 @@ function load_real_data(config::NamedTuple)
                               sort=false,
                               accesses=(:dataset, :ndims, :nbags, :ndata))
     @unpack x, y, b, i = file
-    data = preprocess(ftype.(x), y, b, i[:, seed], ftype.(split))
+    data = preprocess(ftype.(x), y, b, i, ftype.(split))
     return data..., config
 end
 
@@ -208,7 +209,7 @@ function estimate(config::NamedTuple)
 
     @show dataset, hdim, nlayers, aggregation, activation, seed
 
-    model = hmill_classifier(x_trn; activation=activation, aggregation=aggregation, nlayers=nlayers, hdim=hdim, cdim=hdim, seed=1)
+    model = hmill_classifier(x_trn; activation=activation, aggregation=aggregation, nlayers=nlayers, hdim=hdim, cdim=hdim, seed=seed)
 
     status = train!(model, x_trn, y_trn; cb=()->status!(model, x_trn, x_val, x_tst, y_trn, y_val, y_tst), niter=nepoch)
 
@@ -262,13 +263,12 @@ function main_slurm()
                     suffix="jld2",
                     sort=false,
                     ignores=(:dirdata, :ngrid),
-                    verbose=false,
-                    force=false)
+                    verbose=false)
 end
 
 
-# main_local_real()
-# main_slurm_real()
+# main_local()
+main_slurm()
 
 # Base.run(`clear`)
 # best_architecture_table(find_best_architecture(; s=:l_val, x=:l_tst); x=:l_tst)
