@@ -1,10 +1,14 @@
 #!/bin/bash
 
-ndatasets=20
+ndatasets=16
 ngrid=150
 max_jobs=400
 start=1
 
+export start
+export max_jobs
+export ngrid
+export ndatasets
 
 function run() {
     read unavail <<< $(
@@ -25,24 +29,26 @@ function run() {
         printf "%d\n", unavail
     }'
     )
-    echo $unavail;
+    echo "Unvailable slots:" $unavail;
 
     avail=$max_jobs-$((unavail))
-    if [ $avail -gt 0]; then
-        end=$start + $avail
+    if [ $avail -gt 0 ]; then
+        end=$(($start + $avail))
     else
         end=0
     fi 
-    
-    counter=1
-    for c in {1..$ndatasets}; do
-        for d in {1..$ngrid}; do
-            if (( $counter > $start && $counter <= $end )); then
-                sbatch scripts/hmill_classifier.jl $c $d
-            fi
-            counter=$counter+1
+    echo "Available slots:" $avail;
 
-            if [$counter -gt $end]; then
+    counter=1
+    for d in $(seq 1 $ndatasets); do
+        for c in $(seq 1 $ngrid); do
+            if (( $counter > $start && $counter <= $end )); then
+                sbatch scripts/run_job.sh $c $d
+                echo "Submitted job with dataset:" $d "and cofig ID:" $c
+            fi
+            counter=$(($counter+1))
+
+            if [ $counter -gt $end ]; then
                 start = $end
                 export start
             fi
@@ -50,5 +56,6 @@ function run() {
     done
 }
 
+export -f run
 # run in 2 minute intervals
 watch -n 120 run -r
