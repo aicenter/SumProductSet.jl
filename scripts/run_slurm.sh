@@ -31,7 +31,7 @@ function run() {
     )
     echo "Unvailable slots:" $unavail;
 
-    avail=$max_jobs-$((unavail))
+    avail=$(($max_jobs-$unavail))
     if [ $avail -gt 0 ]; then
         end=$(($start + $avail))
     else
@@ -49,7 +49,7 @@ function run() {
             counter=$(($counter+1))
 
             if [ $counter -gt $end ]; then
-                start = $end
+                start=$end
                 export start
             fi
         done
