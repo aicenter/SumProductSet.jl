@@ -3,7 +3,7 @@
 ndatasets=16
 ngrid=150
 max_jobs=400
-start=1
+start=0
 
 export start
 export max_jobs
@@ -44,13 +44,14 @@ function run() {
         for c in $(seq 1 $ngrid); do
             if (( $counter > $start && $counter <= $end )); then
                 sbatch scripts/run_job.sh $c $d
-                echo "Submitted job with dataset:" $d "and cofig ID:" $c
+                echo "Submitted d:" $d ", c:" $c
             fi
             counter=$(($counter+1))
 
             if [ $counter -gt $end ]; then
                 start=$end
                 export start
+                echo "Submitted all I could"
             fi
         done
     done
@@ -58,4 +59,8 @@ function run() {
 
 export -f run
 # run in 2 minute intervals
-watch -n 120 run -r
+# watch -n 120 run -r
+while [ $njobs -ge $start ] ; do
+    runs
+    sleep 2m
+done
