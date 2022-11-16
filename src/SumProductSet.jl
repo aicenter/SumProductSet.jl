@@ -19,12 +19,16 @@ include("setnode.jl")
 include("sumnode.jl")
 include("productnode.jl")
 include("modelbuilders.jl")
+include("utils.jl")
+include("leafs/vae.jl")
 
 export _Poisson, _Categorical, _MvNormal, _MvNormalParams
 export logpdf, logjnt
 export SumNode, ProductNode, SetNode
 export rand, randwithlabel
 export setmixture, gmm, sharedsetmixture
+
+export VAE, Encoder, Decoder, SplitLayer, elbo, reconstruct_loss
 
 Base.show(io::IO, ::MIME"text/plain", n::Union{SumNode, SetNode, ProductNode, _Distribution}) = HierarchicalUtils.printtree(io, n)
 
