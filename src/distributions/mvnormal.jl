@@ -2,25 +2,31 @@
 mutable struct _MvNormal{T, N} <: _Distribution{T}
     b::Array{T, 1}
     A::Array{T, N}
+    r::T
 end
-Flux.@functor _MvNormal
+function _MvNormal(b::Array{T, 1}, A::Array{T, N}) where {T, N}
+    _MvNormal{T, N}(b, A, zero(T))
+end
 
-function _MvNormalParams(μ::Array{T, 1}, Σ::Array{T, 2}) where {T<:Real}
+Flux.@functor _MvNormal
+Flux.trainable(m::_MvNormal) = (m.b, m.A,)
+
+function _MvNormalParams(μ::Array{T, 1}, Σ::Array{T, 2}, r::T=zero(T)) where {T<:Real}
     A = Matrix(cholesky(inv(Σ)).U)
     b = - A * μ
-    _MvNormal{T, 2}(b, A)
+    _MvNormal{T, 2}(b, A, r)
 end
 
-function _MvNormalParams(μ::Array{T, 1}, Σ::Array{T, 1}) where {T<:Real}
+function _MvNormalParams(μ::Array{T, 1}, Σ::Array{T, 1}, r::T=zero(T)) where {T<:Real}
     A = 1 ./ sqrt.(Σ)
     b = - A .* μ
-    _MvNormal{T, 1}(b, A)
+    _MvNormal{T, 1}(b, A, r)
 end
 
 # _MvNormal(d::Int) =_MvNormalParams(randn(Float64, d), diagm(0.5 .+ 0.5*rand(Float64, d)))
 # _MvNormal(d::Int) =_MvNormalParams(-2*(-0.5 .+ rand(Float64, d)), diagm(fill(1e0, d)))
 
-function _MvNormal(d::Int; dtype::Type{<:Real}=Float64, μinit::Symbol=:uniform, Σinit::Symbol=:unit, Σtype::Symbol=:full)
+function _MvNormal(d::Int; dtype::Type{<:Real}=Float64, μinit::Symbol=:uniform, Σinit::Symbol=:unit, Σtype::Symbol=:full, r::Real=0.)
     # covariance initialization type selection
     if Σinit == :unit
         diagΣ = ones(dtype, d)
@@ -37,15 +43,17 @@ function _MvNormal(d::Int; dtype::Type{<:Real}=Float64, μinit::Symbol=:uniform,
         μ = dtype(2)*rand(dtype, d) .- dtype(1)
     elseif μinit == :randn 
         μ = randn(dtype, d)
+    elseif μinit == :zero
+        μ = zeros(dtype, d)
     else
         @error "Specified mean initialization $(μinit) is not supported."
     end
 
     # covariance type selection
     if Σtype == :full
-        return _MvNormalParams(μ, diagm(diagΣ))
+        return _MvNormalParams(μ, diagm(diagΣ), dtype(r))
     elseif Σtype == :diag
-        return _MvNormalParams(μ, diagΣ)
+        return _MvNormalParams(μ, diagΣ, dtype(r))
     else
         @error "Specified covariance type $(Σtype) is not supported."
     end
@@ -62,15 +70,15 @@ Base.rand(m::_MvNormal) = vec(rand(m, 1))
 Base.length(m::_MvNormal) = length(m.b)
 
 function logpdf(m::_MvNormal{T, 2}, x::Array{T, 2}) where {T<:Real}
-    z = m.A * x .+ m.b
-    l = log(abs(det(m.A))) .- T(5e-1)*(size(z, 1)*log(T(2e0)*T(pi)) .+ sum(z.^2, dims=1))
+    z = (m.A + m.r * I) * x .+ m.b
+    l = log(abs(det(m.A + m.r * I))) .- T(5e-1)*(size(z, 1)*log(T(2e0)*T(pi)) .+ sum(z.^2, dims=1))
     l[:]
 end
 logpdf(m::_MvNormal{T, 2}, x::Array{T, 1}) where {T<:Real} = logpdf(m, hcat(x))
 
 function logpdf(m::_MvNormal{T, 1}, x::Array{T, 2}) where {T<:Real}
-    z = m.A .* x .+ m.b
-    l = sum(log.(abs.(m.A))) .- T(5e-1)*(size(z, 1)*log(T(2e0)*T(pi)) .+ sum(z.^2, dims=1))
+    z = (m.A .+ m.r) .* x .+ m.b
+    l = sum(log.(abs.(m.A .+ m.r))) .- T(5e-1)*(size(z, 1)*log(T(2e0)*T(pi)) .+ sum(z.^2, dims=1))
     l[:]
 end
 logpdf(m::_MvNormal{T, 1}, x::Array{T, 1}) where {T<:Real} = logpdf(m, hcat(x))

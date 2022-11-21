@@ -4,12 +4,13 @@ const grid = Iterators.product(
     [Float32, Float64],
     [:uniform, :randn],
     [:unit, :randlow, :randhigh],
-    [:full, :diag])
+    [:full, :diag],
+    [0., 1.])
 
 @testset "_MvNormal --- constructors" begin
     
-    for (d, dtype, μinit, Σinit, Σtype) in grid
-        ps = (; dtype, μinit, Σinit, Σtype)
+    for (d, dtype, μinit, Σinit, Σtype, r) in grid
+        ps = (; dtype, μinit, Σinit, Σtype, r)
         # @show d, ps
         m = _MvNormal(d; ps...)
         @test !isnothing(m)
@@ -20,8 +21,8 @@ end
 @testset "_MvNormal --- initialization and logpdf forward" begin
     
     n = 20
-    for (d, dtype, μinit, Σinit, Σtype) in grid
-        ps = (; dtype, μinit, Σinit, Σtype)
+    for (d, dtype, μinit, Σinit, Σtype, r) in grid
+        ps = (; dtype, μinit, Σinit, Σtype, r)
         m = _MvNormal(d; ps...)
 
         x1 = randn(dtype, d, n)
@@ -36,8 +37,8 @@ end
 @testset "_MvNormal --- rand sampling" begin
 
     n = 20
-    for (d, dtype, μinit, Σinit, Σtype) in grid
-        ps = (; dtype, μinit, Σinit, Σtype)
+    for (d, dtype, μinit, Σinit, Σtype, r) in grid
+        ps = (; dtype, μinit, Σinit, Σtype, r)
         m = _MvNormal(d; ps...)
 
         @test size(rand(m)) == (d,)
@@ -61,8 +62,8 @@ end
 
 @testset "_MvNormal --- integration with Flux" begin
 
-    for (d, dtype, μinit, Σinit, Σtype) in grid
-        ps = (; dtype, μinit, Σinit, Σtype)
+    for (d, dtype, μinit, Σinit, Σtype, r) in grid
+        ps = (; dtype, μinit, Σinit, Σtype, r)
         m = _MvNormal(d; ps...)
 
         ps = Flux.params(m)
