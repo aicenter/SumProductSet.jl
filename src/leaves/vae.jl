@@ -1,7 +1,7 @@
 # define split layer
-struct SplitLayer
-    μ::Flux.Dense
-    σ::Flux.Dense
+struct SplitLayer{T, S}
+    μ::T
+    σ::S
 end
 
 Flux.@functor SplitLayer
@@ -29,7 +29,7 @@ end
 Flux.@functor Decoder
 (m::Decoder)(x::AbstractArray) = m.body(x)
 
-struct VAE{E<:Encoder, D<:Decoder}
+struct VAE{E<:Encoder, D<:Decoder} <: _Distribution{Float64}
     encoder::E
     decoder::D
 end
@@ -61,6 +61,6 @@ function elbo(m::VAE, x::AbstractArray{T}; σd=0.1) where T
     mean(rec - kl)
 end
 
-# this is not actual logpdf but rather ELBO
+# this is not actual logpdf but ELBO
 logpdf(m::VAE, x::AbstractArray) = elbo(m, x) 
     

@@ -20,7 +20,7 @@ include("sumnode.jl")
 include("productnode.jl")
 include("modelbuilders.jl")
 include("utils.jl")
-include("leafs/vae.jl")
+include("leaves/vae.jl")
 
 export _Poisson, _Categorical, _MvNormal, _MvNormalParams
 export logpdf, logjnt
