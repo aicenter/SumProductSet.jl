@@ -54,6 +54,8 @@ function _MvNormal(d::Int; dtype::Type{<:Real}=Float64, μinit::Symbol=:uniform,
         return _MvNormalParams(μ, diagm(diagΣ), dtype(r))
     elseif Σtype == :diag
         return _MvNormalParams(μ, diagΣ, dtype(r))
+    elseif Σtype == :scalar
+        return _MvNormalParams(μ, diagΣ[1:1], dtype(r))
     else
         @error "Specified covariance type $(Σtype) is not supported."
     end
