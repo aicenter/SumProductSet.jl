@@ -14,13 +14,27 @@ Flux.@functor SetNode
 
 Base.length(m::SetNode) = length(m.feature)
 
+
+function Base.getproperty(m::SetNode, name::Symbol)
+    if name in fieldnames(SetNode)
+        getfield(m, name)
+    elseif name == :f
+        getfield(m, :feature)
+    elseif name == :c
+        getfield(m, :cardinality)
+    else
+        error("type SetNode has no field $name")
+    end
+end
+
+
 """
     logpdf(node, x)
 
     log-likelihood of Mill bagnode `x` of a set model `node`
 """
 function logpdf(m::SetNode, x::Mill.BagNode)
-    lp_inst = logpdf(m.feature, x.data)  # might not work on nonvector data
+    lp_inst = logpdf(m.feature, x.data)
     mapreduce(b->logpdf(m.cardinality, length(b)) + sum(lp_inst[b]) + logfactorial(length(b)), vcat, x.bags)
 end
 
