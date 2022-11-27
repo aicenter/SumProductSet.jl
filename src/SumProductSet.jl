@@ -5,7 +5,7 @@ using NNlib
 using StatsBase
 using HierarchicalUtils
 using PoissonRandom
-using LinearAlgebra: det, diagm, cholesky
+using LinearAlgebra
 using Random
 import Mill
 
