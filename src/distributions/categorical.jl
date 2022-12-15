@@ -24,6 +24,7 @@ function logpdf(m::_Categorical, x::Union{Int, Vector{Int}})
 end
 
 # only for `x` inputs whose elements can be losslesly converted to integers
+# assert could be added
 function logpdf(m::_Categorical, x::Union{Float64, Vector{Float64}})
     logp = logsoftmax(m.logp)
     logp[convert.(Int64, x)]
@@ -33,4 +34,14 @@ end
 function logpdf(m::_Categorical, x::Matrix{Float64})
     logp = logsoftmax(m.logp)
     logp[convert.(Int64, vec(x))]
+end
+
+function logpdf(m::_Categorical, x::Flux.OneHotMatrix)
+    logp = logsoftmax(m.logp)
+    vec(reshape(logp, 1, :) * x)
+end
+
+function logpdf(m::_Categorical, x::Flux.OneHotVector)
+    logp = logsoftmax(m.logp)
+    (reshape(logp, 1, :) * x)[]
 end
