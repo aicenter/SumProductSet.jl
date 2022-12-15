@@ -21,12 +21,15 @@ include("productnode.jl")
 include("modelbuilders.jl")
 include("utils.jl")
 include("leaves/vae.jl")
+include("reflectinmodel.jl")
 
 export _Poisson, _Categorical, _MvNormal, _MvNormalParams
 export logpdf, logjnt
 export SumNode, ProductNode, SetNode
 export rand, randwithlabel
 export setmixture, gmm, sharedsetmixture
+
+export reflectinmodel
 
 export VAE, Encoder, Decoder, SplitLayer, elbo, reconstruct_loss
 
