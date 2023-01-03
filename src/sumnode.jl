@@ -4,7 +4,7 @@ struct SumNode{T,C}
     prior::Vector{T}
     function SumNode(components::Vector{C}, prior::Vector{T}) where {T,C}
         ls = length.(components)
-        @assert all( ls .== ls[1])
+        @assert all(ls .== ls[1])
         new{T,C}(components, prior)
     end
 end
@@ -26,7 +26,7 @@ function SumNode(components::Vector; dtype::Type{<:Real}=Float64)
     SumNode(components, ones(dtype, n))
 end
 
-Base.getindex(m::SumNode, i ::Int) = (c = m.components[i], p = m.prior[i])
+Base.getindex(m::SumNode, i::Int) = (c = m.components[i], p = m.prior[i])
 Base.length(m::SumNode) = length(m.components[1])
 
 Flux.@functor SumNode
@@ -37,7 +37,7 @@ Flux.@functor SumNode
     log-jointlikelihood log p(x, y) of samples `x` and class/cluster labels `y` of a model `node`
 """
 function logjnt(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode})
-    lkl = transpose(hcat(map(c -> logpdf(c, x), m.components)...))
+    lkl = transpose(mapreduce(c->logpdf(c, x), hcat, m.components))
     w = logsoftmax(m.prior)
     w .+ lkl
 end
@@ -48,7 +48,7 @@ end
     log-likelihood of samples `x` of a model `node`
 """
 function logpdf(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode})
-    logsumexp(logjnt(m, x), dims = 1)[:]
+    vec(logsumexp(logjnt(m, x), dims=1))
 end
 
 ####
