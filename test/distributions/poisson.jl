@@ -7,9 +7,6 @@
         @test size(SumProductSet.logpdf(m, x)) == size(x)
     end
 
-    # test for MvPoisson (independent), but MvPoisson construction is disabled for now
-    # @test SumProductSet.logpdf(_Poisson(log.([10, 5])), xs[1]) ≈ SumProductSet.logpdf(_Poisson(log(10)), xs[1]) + SumProductSet.logpdf(_Poisson(log(5)), xs[1])
-
 end
 
 @testset "_Poisson --- rand sampling" begin
@@ -25,7 +22,7 @@ end
 
     @test !isempty(ps)
     x = rand(1:20, 10)
-    @test gradient(() -> sum(SumProductSet.logpdf(m, x)), ps) != nothing
+    @test !isnothing(gradient(() -> sum(SumProductSet.logpdf(m, x)), ps))
     gs = gradient(() -> sum(SumProductSet.logpdf(m, x)), ps)
     for p in ps
         @test gs[p] ≈ mapreduce(xi->truegrad(m.logλ, xi), +, x)
