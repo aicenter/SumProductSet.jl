@@ -16,7 +16,7 @@ Base.rand(m::_Poisson) = pois_rand(exp(m.logλ[1]))
 Base.rand(m::_Poisson, n::Int) = map(_->rand(m), 1:n)
 Base.length(m::_Poisson) = length(m.logλ)
 
-_poisson_logpdf(logλ, x) = x .* logλ .- exp(logλ) .- logfactorial.(x)
+_poisson_logpdf(logλ::Real, x) = x .* logλ .- exp(logλ) .- logfactorial.(x)
 
 function logpdf(m::_Poisson, x::Union{Real, Vector{<:Real}})
     mapreduce(logλ -> _poisson_logpdf(logλ, x), +, m.logλ)
