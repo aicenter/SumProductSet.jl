@@ -9,9 +9,12 @@ end
     package (`logpdf` and `length`). Recall that `length` in case of distributions is
     the dimension of a samples.
 """
-struct ProductNode{T<:Tuple,U<:NTuple{N,UnitRange{Int}} where N}
+# TODO: rewrite docstring
+# struct ProductNode{T<:Tuple, U<:NTuple{N, UnitRange{Int}}, K<:NTuple{N, V}} where {N, V}
+struct ProductNode{T<:Tuple, U<:NTuple{N,UnitRange{Int}} where N}
     components::T
     dimensions::U
+    # keys::K # NTuple
 end
 
 Flux.@functor ProductNode
@@ -47,13 +50,14 @@ function logpdf(m::ProductNode, x::AbstractMatrix)
     o
 end
 
-function logpdf(m::ProductNode, x::Mill.ArrayNode)
-    o = logpdf(m.components[1], x.data[m.dimensions[1],:])
-    for i in 2:length(m.components)
-        o += logpdf(m.components[i], x.data[m.dimensions[i],:])
-    end
-    o
-end
+# function logpdf(m::ProductNode, x::Mill.ArrayNode)
+#     o = logpdf(m.components[1], x.data[m.dimensions[1],:])
+#     for i in 2:length(m.components)
+#         o += logpdf(m.components[i], x.data[m.dimensions[i],:])
+#     end
+#     o
+# end
+logpdf(m::ProductNode, x::Mill.ArrayNode) = logpdf(m, x.data)
 
 # each entry of PN has to have its own model distribution!!
 function logpdf(m::ProductNode, x::Mill.ProductNode)
@@ -68,6 +72,7 @@ end
 #	Functions for sampling the model
 ####
 Base.rand(m::ProductNode) = vcat([rand(p) for p in m.components]...)
+# TODO: remove reshape
 Base.rand(m::ProductNode, n::Int) = vcat([reshape(rand(p, n), length(p), n) for p in m.components]...)
 
 # TODO: add sampling for product node of type Mill.ProductNode
