@@ -25,7 +25,6 @@ end
     @test !isempty(ps)
     x = rand(1:n, 20)
     @test !isnothing(gradient(() -> sum(SumProductSet.logpdf(m, x)), ps))
-
 end
 
 @testset "_Categorical --- correctness" begin
@@ -38,4 +37,21 @@ end
 
     @test Distributions.logpdf.(m1, x1) ≈ SumProductSet.logpdf(m2, x1)
     @test Distributions.logpdf.(m1, x2) ≈ SumProductSet.logpdf(m2, x2)
+end
+
+@testset "_Categorical --- integration with OneHotArrays" begin
+    n = 20
+    c = 10
+	m = _Categorical(c)
+    ps = Flux.params(m)
+
+    x = rand(m)
+    x_oh = Flux.onehot(x, 1:c)
+    @test size(SumProductSet.logpdf(m, x)) == ()
+    @test !isnothing(gradient(() -> sum(SumProductSet.logpdf(m, x)), ps))
+
+    x = rand(m, 20)
+    x_oh = Flux.onehotbatch(x, 1:c)
+    @test size(SumProductSet.logpdf(m, x)) == (n,)
+    @test !isnothing(gradient(() -> sum(SumProductSet.logpdf(m, x)), ps))
 end
