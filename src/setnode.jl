@@ -46,24 +46,21 @@ function Base.rand(m::SetNode)
     card = rand(m.cardinality)
     x = rand(m.feature, card)
     if typeof(x) <: Matrix{<:Real}
-        xm = Mill.ArrayNode(x)
+        Mill.BagNode(x, [1:card])
     elseif typeof(x) <: Vector{<:Real}
-        xm = Mill.ArrayModel(hcat(x))
-    elseif typeof(x) <: Mill.ArrayNode
-        xm = x
-    elseif typeof(x) <: Mill.BagNode
-        @error "rand not tested yet for set of set"
-    elseif typeof(x) <: Mill.ProductNode
-        @error "rand not implemented yet for set of product nodes"
+        Mill.BagNode(hcat(x), [1:card])
+    elseif typeof(x) <: Mill.AbstractMillNode
+        Mill.BagNode(x, [1:card])
+    else
+        @error "sampled unknown dtype"
     end
-    Mill.BagNode(xm, [1:card])
 end
 
 function Base.rand(m::SetNode, n::Int)
     if n == 0
-        return Mill.BagNode(missing, [1:0])
+        Mill.BagNode(missing, [1:0])
     else
-        return Mill.catobs(map(_->rand(m), 1:n))
+        Mill.catobs(map(_->rand(m), 1:n))
     end
 end
 
