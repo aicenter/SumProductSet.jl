@@ -42,30 +42,14 @@ end
 ####
 #	Functions for calculating full likelihood
 ####
-function logpdf(m::ProductNode, x::AbstractMatrix)
-    o = logpdf(m.components[1], x[m.dimensions[1],:])
-    for i in 2:length(m.components)
-        o += logpdf(m.components[i], x[m.dimensions[i],:])
-    end
-    o
+function logpdf(m::ProductNode, x::AbstractMatrix{<:Real})
+    mapreduce((c, d)->logpdf(c, x[d, :]), +, m.components, m.dimensions)
 end
-
-# function logpdf(m::ProductNode, x::Mill.ArrayNode)
-#     o = logpdf(m.components[1], x.data[m.dimensions[1],:])
-#     for i in 2:length(m.components)
-#         o += logpdf(m.components[i], x.data[m.dimensions[i],:])
-#     end
-#     o
-# end
 logpdf(m::ProductNode, x::Mill.ArrayNode) = logpdf(m, x.data)
 
-# each entry of PN has to have its own model distribution!!
+# for Mill.ProductNode{<:Tuple} only
 function logpdf(m::ProductNode, x::Mill.ProductNode)
-    o = logpdf(m.components[1], x.data[1])
-    for i in 2:length(m.components)
-        o += logpdf(m.components[i], x.data[i])
-    end
-    o
+    mapreduce((c, d)->logpdf(c, d), +, m.components, x.data)
 end
 
 ####
