@@ -37,9 +37,9 @@ Flux.@functor SumNode
     log-jointlikelihood log p(x, y) of samples `x` and class/cluster labels `y` of a model `node`
 """
 function logjnt(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode})
-    lkl = transpose(mapreduce(c->logpdf(c, x), hcat, m.components))
-    w = logsoftmax(m.prior)
-    w .+ lkl
+    logcmps = transpose(mapreduce(c->logpdf(c, x), hcat, m.components))
+    logw = logsoftmax(m.prior)
+    logcmps .+ logw
 end
 
 """
