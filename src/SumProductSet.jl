@@ -19,9 +19,10 @@ include("setnode.jl")
 include("sumnode.jl")
 include("productnode.jl")
 include("modelbuilders.jl")
-include("utils.jl")
+include("util.jl")
 include("leaves/vae.jl")
 include("reflectinmodel.jl")
+include("loss.jl")
 
 export _Poisson, _Categorical, _MvNormal, _MvNormalParams
 export logpdf, logjnt
@@ -30,6 +31,7 @@ export rand, randwithlabel
 export setmixture, gmm, sharedsetmixture
 
 export reflectinmodel
+export ul_loss, sl_loss, ssl_loss
 
 export VAE, Encoder, Decoder, SplitLayer, elbo, reconstruct_loss
 
