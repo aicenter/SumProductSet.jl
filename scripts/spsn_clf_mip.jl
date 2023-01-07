@@ -85,6 +85,11 @@ function train!(m::SumNode{T, <:SetNode}, x_trn::Mill.BagNode, y_trn::Vector{Int
             end_type = :tol  # tolerance
             break
         end
+        if time() - start_time > 23.5*60*60
+            @info "STOPPED after 23.5 hours of training"
+            end_type = :time  # time_limit
+            break
+        end
     end
 
     @info "Finished training"
