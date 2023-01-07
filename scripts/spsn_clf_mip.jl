@@ -1,15 +1,25 @@
 #!/usr/bin/env sh
-#SBATCH --array=1-40
-#SBATCH --mem=16G
+#SBATCH --array=1-120
+#SBATCH --mem=32G
 #SBATCH --time=24:00:00
 #SBATCH --nodes=1 --ntasks-per-node=1 --cpus-per-task=1
+#SBATCH --exclude=n33
 #SBATCH --partition=cpu
-#SBATCH --out=/home/rektomar/logs/analysismip/%x-%j.out
+#SBATCH --out=/home/rektomar/logs/spsn_clf_mip/%x-%j.out
 #= 
 ml --ignore_cache Julia/1.8.0-linux-x86_64
-srun julia scripts/analysismip.jl --n $SLURM_ARRAY_TASK_ID --m $1
-exit
+srun julia scripts/spsn_clf_mip.jl --n $SLURM_ARRAY_TASK_ID --m $1
+exit    
 # =#
+
+
+"""
+Experiment with fixed data seed, fixed model seed.
+Using k seeds for data train/val/test spliting -> k-fold cross validation.
+One seed for model initialization.
+"""
+
+const MODEL_SEED = 1;
 
 using DrWatson
 @quickactivate
@@ -28,16 +38,12 @@ using BSON: @load
 using PrettyTables
 using PoissonRandom
 using LinearAlgebra
-# using SpecialFunctions
 using EvalMetrics
 
 
 const maxseed = 20
 const path = "/home/$(ENV["USER"])/datasets/clean/mill"
 
-function loss(m::SumNode, x::Mill.BagNode, y::Vector{Int})
-    -mean( logjnt(m, x)[CartesianIndex.(y, 1:length(y))])
-end 
 
 function update_history!(history::NamedTuple, status) 
     for (key, value) in pairs(status)
@@ -46,21 +52,24 @@ function update_history!(history::NamedTuple, status)
     history
 end
 
-function train!(m::SumNode{T, <:SetNode}, x_trn::Mill.BagNode, y_trn::Vector{Int}; cb=()->(), niter::Int=200, tol::Real=1e-5, opt=ADAM(0.02)) where T
+function train!(m::SumNode{T, <:SetNode}, x_trn::Mill.BagNode, y_trn::Vector{Int}; cb=iter->(), niter::Int=200, tol::Real=1e-5, opt=ADAM(0.02)) where T
 
     l_old = -Float64(Inf)
     ps = Flux.params(m)
 
-    @info "Starting training"
-    status = cb()
-    history = NamedTuple(key => [value] for (key, value) in pairs(status) )
+    # compute gradient once to precompile computation
+    gs = gradient(()-> sl_loss(m, x_trn, y_trn), ps);
+    end_type = :mi  # max iters
 
+    @info "Starting training"
+    status = cb(0)
+
+    start_time = time()
     for iter in 1:niter
-        gs = gradient(()-> loss(m, x_trn, y_trn), ps)            
+        gs = gradient(()-> sl_loss(m, x_trn, y_trn), ps)            
         Flux.Optimise.update!(opt, ps, gs)
 
-        status = cb()
-        update_history!(history, status)
+        status = cb(iter)
 
         l_trn = status[:l_trn]
         l_dif = l_trn - l_old
@@ -68,20 +77,25 @@ function train!(m::SumNode{T, <:SetNode}, x_trn::Mill.BagNode, y_trn::Vector{Int
 
         if l_dif < 0 
             @info "STOPPED after $(iter) steps, obtained negative likelihood increment"
+            end_type = :ni  # negative increment
             break
         end
         if abs(l_dif) < tol
             @info "STOPPED after $(iter) steps, reached minimum improvement tolerance"
+            end_type = :tol  # tolerance
             break
         end
     end
 
-    return history
+    @info "Finished training"
+    trn_time = time() - start_time
+
+    return trn_time, status
 end
 
 acc(prediction, target) = mean(prediction .== target)    
 
-function status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, verbose=false)
+function status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, iter)
     l_trn = mean(logpdf(m, x_trn))
     l_val = mean(logpdf(m, x_val))
     l_tst = mean(logpdf(m, x_tst))
@@ -89,7 +103,6 @@ function status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, verbose=false)
     ŷ_trn = getindex.(argmax(softmax(logjnt(m, x_trn)), dims=1), 1)[:]
     ŷ_val = getindex.(argmax(softmax(logjnt(m, x_val)), dims=1), 1)[:]
     ŷ_tst = getindex.(argmax(softmax(logjnt(m, x_tst)), dims=1), 1)[:]
-
 
     ari_trn = randindex(y_trn, ŷ_trn)[1]
     ari_val = randindex(y_val, ŷ_val)[1]
@@ -102,15 +115,20 @@ function status!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, verbose=false)
     acc_val = acc(ŷ_val, y_val)
     acc_tst = acc(ŷ_tst, y_tst)
 
+    # calculate scores
+    s_trn = softmax(logjnt(m, x_trn), dims=1)
+    s_val = softmax(logjnt(m, x_val), dims=1)
+    s_tst = softmax(logjnt(m, x_tst), dims=1)
+
     # convert labels [1, 2] to [0, 1]
-    mcc_trn = EvalMetrics.mcc(ConfusionMatrix(ŷ_trn .- 1, y_trn .- 1))
-    mcc_val = EvalMetrics.mcc(ConfusionMatrix(ŷ_val .- 1, y_val .- 1))
-    mcc_tst = EvalMetrics.mcc(ConfusionMatrix(ŷ_tst .- 1, y_tst .- 1))
+    auc_trn = binary_eval_report(y_trn .- 1, s_trn[2, :])["au_roccurve"]
+    auc_val = binary_eval_report(y_val .- 1, s_val[2, :])["au_roccurve"]
+    auc_tst = binary_eval_report(y_tst .- 1, s_tst[2, :])["au_roccurve"]
 
-    @printf("lkl:| %2.4e %2.4e %2.4e |   ri:| %.2f %.2f %.2f |  ari:| %.2f %.2f %.2f |  acc:| %.2f %.2f %.2f |   mcc:| %.2f %.2f %.2f | \n",
-        l_trn, l_val, l_tst, ri_trn, ri_val, ri_tst, ari_trn, ari_val, ari_tst, acc_trn, acc_val, acc_tst, mcc_trn, mcc_val, mcc_tst)
+    @printf("Epoch %i - lkl:| %2.4e %2.4e %2.4e |  ari:| %.2f %.2f %.2f |  acc:| %.2f %.2f %.2f |   auc:| %.2f %.2f %.2f | \n",
+        iter, l_trn, l_val, l_tst, ri_trn, ri_val, ri_tst, acc_trn, acc_val, acc_tst, auc_trn, auc_val, auc_tst)
 
-    (; l_trn, l_val, l_tst, ari_trn, ari_val, ari_tst, ri_trn, ri_val, ri_tst, acc_trn, acc_val, acc_tst, mcc_trn, mcc_val, mcc_tst)
+    (; l_trn, l_val, l_tst, ari_trn, ari_val, ari_tst, ri_trn, ri_val, ri_tst, acc_trn, acc_val, acc_tst, auc_trn, auc_val, auc_tst, s_trn, s_val, s_tst, iter)
 end
 
 
@@ -125,9 +143,9 @@ datasets = [
     (dataset="musk_2",                     ndims=166,   ndata=6598,    nclass=2,    nbags=102 ) # end=6598     7
     (dataset="mutagenesis_1",              ndims=7,     ndata=10486,   nclass=2,    nbags=188 ) # end=10486    8
     (dataset="mutagenesis_2",              ndims=7,     ndata=2132,    nclass=2,    nbags=42  ) # end=2132     9
-    # (dataset="newsgroups_1",               ndims=200,   ndata=5443,    nclass=2,    nbags=100 ) # end=5443     10
-    # (dataset="newsgroups_2",               ndims=200,   ndata=3094,    nclass=2,    nbags=100 ) # end=3094     11
-    # (dataset="newsgroups_3",               ndims=200,   ndata=5175,    nclass=2,    nbags=100 ) # end=5175     12
+    (dataset="newsgroups_1",               ndims=200,   ndata=5443,    nclass=2,    nbags=100 ) # end=5443     10
+    (dataset="newsgroups_2",               ndims=200,   ndata=3094,    nclass=2,    nbags=100 ) # end=3094     11
+    (dataset="newsgroups_3",               ndims=200,   ndata=5175,    nclass=2,    nbags=100 ) # end=5175     12
     (dataset="protein",                    ndims=9,     ndata=26611,   nclass=2,    nbags=193 ) # end=26611    13
     (dataset="tiger",                      ndims=230,   ndata=1220,    nclass=2,    nbags=200 ) # end=1220     14
     (dataset="ucsb_breast_cancer",         ndims=708,   ndata=2002,    nclass=2,    nbags=58  ) # end=2002     15
@@ -224,30 +242,36 @@ function estimate(config::NamedTuple)
     if cardtype == :poisson
         cdist = ()-> _Poisson()
     elseif cardtype == :categorical
-        # kind of cheating for now
+        # kind of cheating
         k = maximum([length.(x_tst.bags); length.(x_val.bags); length.(x_trn.bags)])
         cdist = () -> _Categorical(k)
     else
         @error "Unknown cardinality distribution"
     end
 
+    Random.seed!(MODEL_SEED)
     model = setmixture(nb, ni, d; cdist=cdist, Σtype=covtype)
-    history = train!(model, x_trn, y_trn; cb=()->status!(model, x_trn, x_val, x_tst, y_trn, y_val, y_tst), niter=nepoc)
+    time, status = train!(model, x_trn, y_trn; cb=iter->status!(model, x_trn, x_val, x_tst, y_trn, y_val, y_tst, iter), niter=nepoc)
+    n_params = sum(length, Flux.params(model))
 
-    ntuple2dict(merge(config, history, (; model)))
+    ntuple2dict(merge(config, status, (; model, n_params, time)))
 end
 
 # ranktable for old version of analysismip.jl
 function result_table(; to_show=[:l, :ri, :ari, :acc], type=[:trn, :val, :tst], kwargs...)
     df = collect_results(datadir("analysis_mip/results"); kwargs...)
-    df = groupby(df, [:dataset, :ni, :ctype, :cardtype])
 
     table_metrics = [Symbol(metric, :_, settype) for metric in to_show for settype in type]
-    table_operations = [op => x->broadcast(last, x) => mean for op in table_metrics]
+    # table_operations = [op => x->broadcast(last, x) for op in table_metrics]
+    table_operations = [op => ByRow(x->last(x)) for op in table_metrics]
+    df = combine(df, :dataset, :ni, :covtype, :cardtype, :seed, table_operations..., renamecols=false)
+    df = groupby(df, [:dataset, :ni, :covtype, :cardtype])
+
+    table_operations = [op => mean for op in table_metrics]
 
     df = combine(df, table_operations..., renamecols=false)
     df = combine(df->df[argmax(df[!, :l_val]), :], groupby(df, [:dataset]))
-    combine(df, :dataset, :ni, :ctype, :cardtype, [xi => ByRow(n->round(n, sigdigits=3)) for xi in table_metrics]..., renamecols=false)
+    combine(df, :dataset, :ni, :covtype, :cardtype, [xi => ByRow(n->round(n, sigdigits=3)) for xi in table_metrics]..., renamecols=false)
 end
 
 function main_local()
@@ -257,18 +281,17 @@ function main_local()
     perm = randperm(maximum(bags))
     x_trn, x_val, x_tst, y_trn, y_val, y_tst = preprocess(Float64.(data), labs, bags, perm)
 
-    # @show size(x_trn.data.data)
-    # @show x_trn.data.data[:, 1]
-    d = size(x_trn.data.data, 1)
-    nb = 2
+    d = size(x_trn.data.data, 1)  # dimension of one instance
+    nb = 2  # number of setmixture components
+    ni = 8  # number of instance componenets
 
-    mb_1 = setmixture(nb, 8, d)
-    mb_2 = setmixture(nb, 1, d; cdist=() -> _Categorical(50))
+    mb_1 = setmixture(nb, ni, d)
+    # mb_2 = setmixture(nb, 1, d; cdist=() -> _Categorical(50))
 
-    niter = 100
+    niter = 10
 
-    train!(mb_1, x_trn, y_trn; niter=niter, cb=()->status!(mb_1, x_trn, x_val, x_tst, y_trn, y_val, y_tst))
-    # train!(mb_2, x_trn, y_trn; niter=niter, cb=()->status!(mb_2, x_trn, x_val, x_tst, y_trn, y_val, y_tst))
+    train!(mb_1, x_trn, y_trn; niter=niter, cb=iter->status!(mb_1, x_trn, x_val, x_tst, y_trn, y_val, y_tst, iter))
+    # train!(mb_2, x_trn, y_trn; niter=niter, cb=iter->status!(mb_2, x_trn, x_val, x_tst, y_trn, y_val, y_tst, iter))
 
     nothing
 end
@@ -281,7 +304,7 @@ function main_slurm()
         [1 2 4 8 16 32],
         [:full, :diag],
         [:poisson, :categorical],
-        [2000],
+        [20000],
         [[64e-2, 16e-2, 2e-1]],
         collect(1:5))
 
@@ -299,4 +322,4 @@ function main_slurm()
 end
 
 # main_local()
-main_slurm()
+# main_slurm()
