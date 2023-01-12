@@ -10,11 +10,9 @@ end
     the dimension of a samples.
 """
 # TODO: rewrite docstring
-# struct ProductNode{T<:Tuple, U<:NTuple{N, UnitRange{Int}}, K<:NTuple{N, V}} where {N, V}
-struct ProductNode{T<:Tuple, U<:NTuple{N,UnitRange{Int}} where N}
+struct ProductNode{T<:Union{Tuple, NamedTuple}, U<:NTuple{N, UnitRange{Int}} where N}
     components::T
     dimensions::U
-    # keys::K # NTuple
 end
 
 Flux.@functor ProductNode
@@ -28,7 +26,7 @@ Base.getindex(m::ProductNode, i...) = getindex(m.components, i...)
     ProductNode with `ps` independent random variables. Each random variable has to
     implement `logpdf` and `length`.
 """
-function ProductNode(ps::Tuple)
+function ProductNode(ps::Union{Tuple, NamedTuple})
     dimensions = Vector{UnitRange{Int}}(undef, length(ps))
     start = 1
     for (i, p) in enumerate(ps)
@@ -42,14 +40,18 @@ end
 ####
 #	Functions for calculating full likelihood
 ####
-function logpdf(m::ProductNode, x::AbstractMatrix{<:Real})
+function logpdf(m::ProductNode{T}, x::AbstractMatrix{U}) where {T<:Tuple, U<:Real}
     mapreduce((c, d)->logpdf(c, x[d, :]), +, m.components, m.dimensions)
 end
 logpdf(m::ProductNode, x::Mill.ArrayNode) = logpdf(m, x.data)
 
-# for Mill.ProductNode{<:Tuple} only
-function logpdf(m::ProductNode, x::Mill.ProductNode)
-    mapreduce((c, d)->logpdf(c, d), +, m.components, x.data)
+function logpdf(m::ProductNode{T}, x::Mill.ProductNode{U}) where {T<:Tuple, U<:Tuple}
+    mapreduce((c, i)->logpdf(c, x.data[i]), +, m.components, 1:length(m.components))
+end
+
+function logpdf(m::ProductNode{<:NamedTuple{KM}}, x::Mill.ProductNode{<:NamedTuple{KD}}) where {KM, KD}
+    # TODO: add check for KM and KD
+    mapreduce(k->logpdf(m.components[k], x.data[k]), +, KM)
 end
 
 ####
