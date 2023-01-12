@@ -1,8 +1,8 @@
 
 """
-    Setnode(feature, cardinality)
+    SetNode(feature, cardinality)
 
-    Iid cluster model of point process. 
+    IID cluster model of point process. 
     Both feature and cardinality has to be valid distributions/nodes with valid logpdf. 
 """
 struct SetNode{T, S}
@@ -11,9 +11,7 @@ struct SetNode{T, S}
 end
 
 Flux.@functor SetNode
-
 Base.length(m::SetNode) = length(m.feature)
-
 
 function Base.getproperty(m::SetNode, name::Symbol)
     if name in fieldnames(SetNode)
@@ -52,7 +50,7 @@ function Base.rand(m::SetNode)
     elseif typeof(x) <: Mill.AbstractMillNode
         Mill.BagNode(x, [1:card])
     else
-        @error "sampled unknown dtype"
+        @error "sampled unknown datatype"
     end
 end
 
@@ -69,4 +67,4 @@ end
 ####
 HierarchicalUtils.NodeType(::Type{<:SetNode}) = InnerNode()
 HierarchicalUtils.nodeshow(io::IO, ::SetNode) = print(io, "SetNode")
-HierarchicalUtils.printchildren(node::SetNode) = [:f => node.feature, :c => node.cardinality]
+HierarchicalUtils.printchildren(node::SetNode) = (c=node.cardinality, f=node.feature)
