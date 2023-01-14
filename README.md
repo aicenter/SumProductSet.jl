@@ -8,15 +8,16 @@ To reproduce this project, do the following:
 
 1. Download this code base repository.
 2. Open a Julia console and type:
-   ```
-   julia> using Pkg
-   julia> Pkg.activate("path/to/the/project")
-   julia> Pkg.instantiate()
+   ```julia
+   using Pkg
+   Pkg.activate("path/to/the/project")
+   Pkg.instantiate()
    ```
 3. Use the package:
- ```
-   julia> using SumProductSet
-```
+   ``` julia
+   using SumProductSet
+   
+   ```
 
 
 This will download and install all necessary packages defined in project environment for you.
