@@ -13,11 +13,9 @@ To reproduce this project, do the following:
    Pkg.activate("path/to/the/project")
    Pkg.instantiate()
    ```
+   This will download and install all necessary packages defined in project environment for you.
 3. Use the package:
    ``` julia
    using SumProductSet
    
    ```
-
-
-This will download and install all necessary packages defined in project environment for you.
