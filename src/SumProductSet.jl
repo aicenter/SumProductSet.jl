@@ -14,10 +14,8 @@ function logfactorial(x::Real)
     sum(log.(collect(2:x)))
 end
 
-include("distributions.jl")
-include("setnode.jl")
-include("sumnode.jl")
-include("productnode.jl")
+include("modelnodes/modelnode.jl")
+include("distributions/distributions.jl")
 include("modelbuilders.jl")
 include("util.jl")
 include("leaves/vae.jl")
@@ -35,7 +33,7 @@ export ul_loss, sl_loss, ssl_loss
 
 export VAE, Encoder, Decoder, SplitLayer, elbo, reconstruct_loss
 
-Base.show(io::IO, ::MIME"text/plain", n::Union{SumNode, SetNode, ProductNode, _Distribution}) = HierarchicalUtils.printtree(io, n)
+Base.show(io::IO, ::MIME"text/plain", n::AbstractModelNode) = HierarchicalUtils.printtree(io, n)
 
 
 end # end module
