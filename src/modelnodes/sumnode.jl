@@ -1,5 +1,5 @@
 
-struct SumNode{T,C}
+struct SumNode{T, C <: AbstractModelNode} <: AbstractModelNode
     components::Vector{C}
     prior::Vector{T}
     function SumNode(components::Vector{C}, prior::Vector{T}) where {T,C}

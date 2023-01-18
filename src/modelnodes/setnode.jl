@@ -1,11 +1,20 @@
-
 """
+    SetNode{T, S}
     SetNode(feature, cardinality)
 
     IID cluster model of point process. 
     Both feature and cardinality has to be valid distributions/nodes with valid logpdf. 
+
+# Examples
+```jldoctest
+julia> Random.seed!(0);
+julia> SetNode(_MvNormal(3), _Poisson())
+SetNode
+  ├── c: _Poisson
+  ╰── f: _MvNormal
+```
 """
-struct SetNode{T, S}
+struct SetNode{T <: AbstractModelNode, S <: AbstractModelNode} <: AbstractModelNode
     feature::T
     cardinality::S
 end
