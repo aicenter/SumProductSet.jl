@@ -1,12 +1,12 @@
 
-abstract type _Distribution{T} end
+abstract type _Distribution{T} <: AbstractModelNode end
 
 ###
 #   concrete distributions import
 ###
-include("distributions/poisson.jl")
-include("distributions/mvnormal.jl")
-include("distributions/categorical.jl")
+include("poisson.jl")
+include("mvnormal.jl")
+include("categorical.jl")
 
 ###
 #  compatibility with Mill
@@ -16,5 +16,5 @@ logpdf(d::_Distribution, x::Mill.ArrayNode) = logpdf(d, x.data)
 ####
 #  compatibility with HierarchicalUtils
 ####
-HierarchicalUtils.nodeshow(io::IO, ::T) where {T<:_Distribution} = print(io, "$(T)")
+HierarchicalUtils.nodeshow(io::IO, ::T) where {T<:_Distribution} = print(io, "$(nameof(T))")
 HierarchicalUtils.NodeType(::Type{<:_Distribution}) = LeafNode()
