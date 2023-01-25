@@ -23,9 +23,6 @@ function _MvNormalParams(μ::Array{T, 1}, Σ::Array{T, 1}, r::T=zero(T)) where {
     _MvNormal{T, 1}(b, A, r)
 end
 
-# _MvNormal(d::Int) =_MvNormalParams(randn(Float64, d), diagm(0.5 .+ 0.5*rand(Float64, d)))
-# _MvNormal(d::Int) =_MvNormalParams(-2*(-0.5 .+ rand(Float64, d)), diagm(fill(1e0, d)))
-
 function _MvNormal(d::Int; dtype::Type{<:Real}=Float64, μinit::Symbol=:uniform, Σinit::Symbol=:unit, Σtype::Symbol=:full, r::Real=0.)
     # covariance initialization type selection
     if Σinit == :unit
@@ -67,7 +64,7 @@ end
 function Base.rand(m::_MvNormal{T, 1}, n::Int) where {T<:Real} 
     (1 ./ m.A) .* (randn(T, length(m.b), n) .- m.b)
 end
-Base.rand(m::_MvNormal) = vec(rand(m, 1))
+Base.rand(m::_MvNormal) = rand(m, 1)
 
 Base.length(m::_MvNormal) = length(m.b)
 

@@ -61,13 +61,12 @@ function ProductNode(ps::Union{Tuple, NamedTuple})
     end
     ProductNode(ps, tuple(dimensions...))
 end
-ProductNode(ms...) = ProductNode(ms)
+ProductNode(ms::AbstractModelNode...) = ProductNode(ms)
 ProductNode(;ms...) = ProductNode(NamedTuple(ms))
 
 ####
 #	Functions for calculating full likelihood
 ####
-
 
 function logpdf(m::ProductNode{<:Tuple}, x::AbstractMatrix{<:Real})
     mapreduce((c, d)->logpdf(c, x[d, :]), +, m.components, m.dimensions)
@@ -85,14 +84,22 @@ end
 ####
 #	Functions for sampling the model
 ####
-Base.rand(m::ProductNode) = vcat([rand(p) for p in m.components]...)
-Base.rand(m::ProductNode, n::Int) = vcat([reshape(rand(p, n), length(p), n) for p in m.components]...)
 
-# TODO: add sampling for product node of type Mill.ProductNode
+_reshape(x::Vector{Int}) = reshape(x, 1, :)  # specially for 1D distributions
+_reshape(x) = x
+
+Base.rand(m::ProductNode, n::Int) = mapreduce(c->rand(c, n) |> _reshape, vcat, m.components)
+Base.rand(m::ProductNode) = rand(m, 1)
+
+function Base.rand(m::ProductNode{<:NamedTuple{KM}}, n::Int) where KM
+    Mill.ProductNode( map( k-> rand(m[k], n) |> _reshape, KM) )
+end
 
 ####
 #	Functions for making the library compatible with HierarchicalUtils
 ####
+
 HierarchicalUtils.NodeType(::Type{<:ProductNode}) = InnerNode()
 HierarchicalUtils.nodeshow(io::IO, ::ProductNode) = print(io, "ProductNode")
 HierarchicalUtils.printchildren(node::ProductNode) = node.components
+

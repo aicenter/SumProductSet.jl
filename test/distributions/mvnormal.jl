@@ -41,7 +41,7 @@ end
         ps = (; dtype, μinit, Σinit, Σtype, r)
         m = _MvNormal(d; ps...)
 
-        @test size(rand(m)) == (d,)
+        @test size(rand(m)) == (d, 1)
         @test size(rand(m, n)) == (d, n)
         @test eltype(rand(m, n)) == dtype
     end

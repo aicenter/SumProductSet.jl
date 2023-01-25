@@ -1,22 +1,30 @@
 """
-    SetNode{T, S}
-    SetNode(feature, cardinality)
+    SetNode{F<:AbstractModelNode, C<:AbstractModelNode} <: AbstractModelNode
 
-    IID cluster model of point process. 
-    Both feature and cardinality has to be valid distributions/nodes with valid logpdf. 
+Implement IID cluster model for random finite sets as `AbstractModelNode` given
+feature and cardinality `AbstractModelNode`s.  
 
 # Examples
 ```jldoctest
 julia> Random.seed!(0);
-julia> SetNode(_MvNormal(3), _Poisson())
+julia> m = SetNode(_MvNormal(3), _Poisson())
 SetNode
   ├── c: _Poisson
   ╰── f: _MvNormal
+julia> x = rand(m, 4)
+BagNode  # 4 obs, 128 bytes
+  ╰── ArrayNode(3×16 Array with Float64 elements)  # 16 obs, 432 bytes
+julia> logpdf(m, x)
+4-element Vector{Float64}:
+-21.731904383021657
+-9.399785480434305
+-20.530028604626864
+-7.740694026190765
 ```
 """
-struct SetNode{T <: AbstractModelNode, S <: AbstractModelNode} <: AbstractModelNode
-    feature::T
-    cardinality::S
+struct SetNode{F<:AbstractModelNode, C<:AbstractModelNode} <: AbstractModelNode
+    feature::F
+    cardinality::C
 end
 
 Flux.@functor SetNode

@@ -17,11 +17,12 @@ function logpdf(m::_Categorical, x::Union{Int, Vector{Int}})
     logp[x]
 end
 
+
 # only for `x` inputs whose elements can be losslesly converted to integers
 # TODO: Add args check
+logpdf(m::_Categorical, x::Matrix) = logpdf(m, vec(x)) 
 logpdf(m::_Categorical, x::Union{Float64, Vector{Float64}}) = logpdf(m, convert.(Int64, x))
-
-logpdf(m::_Categorical, x::Union{Float64, Matrix{Float64}}) = logpdf(m, convert.(Int64, vec(x)))
+logpdf(m::_Categorical, x::Union{Matrix{Float64}}) = logpdf(m, convert.(Int64, vec(x)))
 
 _oh_logpdf(m::_Categorical, x::Flux.OneHotArray) = reshape(logsoftmax(m.logp), 1, :) * x
 logpdf(m::_Categorical, x::Flux.OneHotMatrix) = vec(_oh_logpdf(m, x))
