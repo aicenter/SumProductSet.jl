@@ -7,7 +7,7 @@ is package for probailistic learning of hierarchicaly structured heterogeneous d
 To reproduce this project, do the following:
 
 1. Download this code base repository.
-2. Open a Julia console and type:
+2. Open a Julia (preferably Julia 1.8) console and type:
    ```julia
    using Pkg
    Pkg.activate("path/to/the/project")
@@ -19,3 +19,10 @@ To reproduce this project, do the following:
    using SumProductSet
    
    ```
+   
+   Basic examples are shown in [examples](https://github.com/aicenter/SumProductSet.jl/tree/dev/examples) folder. Examples that require externel libraries
+   not included in SumProductSet.jl package have separate environment.
+   
+   ## Note
+   Importing Mill.jl or Distribution.jl is prefered to `using` these packages since it does not create ambiguity between the packages and SumProductSet.jl
+   package.
