@@ -1,5 +1,5 @@
-# SumProductSet.jl
 [![Run tests](https://github.com/aicenter/SumProductSet.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/aicenter/SumProductSet.jl/actions/workflows/ci.yml)
+# SumProductSet.jl
 
 is package for probailistic learning of hierarchicaly structured heterogeneous data based on SumProduct networks. The package extends standard SumProduct networks by introducing new type of model node and implementing rules for building models over aforementioned data. It is based on [SumProductTransform.jl](https://github.com/pevnak/SumProductTransform.jl) package. The package [Mill.jl](https://github.com/CTUAvastLab/Mill.jl) is used as a framework that unifies accepted data format.
 
