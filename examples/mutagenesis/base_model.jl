@@ -4,7 +4,7 @@ import Mill
 
 Random.seed!(42)
 
-function train!(m, x, y; niter::Int=200, opt=ADAM(0.02))
+function train!(m, x, y; niter::Int=10, opt=ADAM(0.02))
     ps = Flux.params(m)
 
     loss = () -> -mean( logjnt(m, x)[CartesianIndex.(y, 1:length(y))])
@@ -46,7 +46,7 @@ predict = x->mapslices(argmax, logjnt(m, x), dims=1)[:]
 accuracy(y, x) = mean(y .== predict(x))
 
 # train the model
-train!(m, ds_train, y_train; niter=200, opt=ADAM(0.1))
+train!(m, ds_train, y_train; niter=10, opt=ADAM(0.1))
 
 # get test data
 x_test, y_test = MLDatasets.Mutagenesis.testdata();

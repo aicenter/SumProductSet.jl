@@ -369,9 +369,9 @@ version = "0.9.17"
 
 [[deps.HierarchicalUtils]]
 deps = ["DataStructures", "OrderedCollections"]
-git-tree-sha1 = "59d9e57126c77d71f5eba4e1147389ae54c5248e"
+git-tree-sha1 = "e296de8ba6aabe14dcb26567e00f174c512a1ab9"
 uuid = "f9ccea15-0695-44b9-8113-df7c26ae4fa9"
-version = "2.1.2"
+version = "2.1.5"
 
 [[deps.HttpCommon]]
 deps = ["Dates", "Nullables", "Test", "URIParser"]
