@@ -1,5 +1,5 @@
 """
-    Build model mixture model of HMILL data.
+    Build mixture model of HMILL data.
     x - one HMLL sample
     n - number of mixture components in root node 
     f_{type} - leaf distribution for {type} variable
@@ -24,6 +24,3 @@ end
 _reflectinmodel(x::Mill.ArrayNode; f_cont, f_cat, f_card, dtype) = _reflectinmodel(x.data; f_cont=f_cont, f_cat=f_cat, f_card=f_card, dtype=dtype)
 _reflectinmodel(x::Flux.OneHotArray; f_cont, f_cat, f_card, dtype) = f_cat(size(x, 1))
 _reflectinmodel(x::AbstractArray; f_cont, f_cat, f_card, dtype) = f_cont(size(x, 1))
-
-
-
