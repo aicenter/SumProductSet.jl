@@ -7,12 +7,13 @@ using StatsBase
 using Clustering
 import Mill
 
-function train!(m::SumNode, x::Mill.BagNode; niter::Int=300, opt=ADAM(0.01))
+function train!(m, x; niter::Int=200, opt=ADAM(0.01))
     ps = Flux.params(m)
 
+    loss = () -> ul_loss(m, x)
     for i in 1:niter
         println("Iter $(i) ll: $(mean(logpdf(m, x)))")
-        gs = gradient(()->-mean(logpdf(m, x)), ps)
+        gs = gradient(loss, ps)
         Flux.Optimise.update!(opt, ps, gs)
     end
     println("Final ll: $(mean(logpdf(m, x)))")
