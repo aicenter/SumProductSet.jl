@@ -20,7 +20,8 @@ julia> logpdf(m, x)
  -51.62330239036811
 ```
 """
-struct ProductNode{T<:Union{Tuple, NamedTuple}, U<:NTuple{N, UnitRange{Int}} where N} <: AbstractModelNode
+COMP_TYPES = Union{Tuple, NamedTuple, Dict}
+struct ProductNode{T<:COMP_TYPES, U<:NTuple{N, UnitRange{Int}} where N} <: AbstractModelNode
     components::T
     dimensions::U
 end
@@ -51,7 +52,7 @@ ProductNode
 ```
 
 """
-function ProductNode(ps::Union{Tuple, NamedTuple})
+function ProductNode(ps::Union{Tuple, NamedTuple, Dict})
     dimensions = Vector{UnitRange{Int}}(undef, length(ps))
     start = 1
     for (i, p) in enumerate(ps)
@@ -81,6 +82,12 @@ function logpdf(m::ProductNode{<:NamedTuple{KM}}, x::Mill.ProductNode{<:NamedTup
     mapreduce(k->logpdf(m.components[k], x.data[k]), +, KM)
 end
 
+Mill.getindex(x::Mill.ProductNode, k::Set{Symbol}) = Mill.ProductNode(NamedTuple(ki=>x[ki] for ki in collect(k)))
+
+function logpdf(m::ProductNode{<:Dict}, x::Mill.ProductNode{<:NamedTuple{KD}}) where {KM, KD}
+    mapreduce(k->logpdf(m.components[k], x[k]), +, keys(m.components))
+end
+
 ####
 #	Functions for sampling the model
 ####
@@ -103,3 +110,5 @@ HierarchicalUtils.NodeType(::Type{<:ProductNode}) = InnerNode()
 HierarchicalUtils.nodeshow(io::IO, ::ProductNode) = print(io, "ProductNode")
 HierarchicalUtils.printchildren(node::ProductNode) = node.components
 
+# HierarchicalUtils.printchildren(node::ProductNode{<: Dict}) = [tuple(k...)=>v for (k, v) in node.components]
+HierarchicalUtils.printchildren(node::ProductNode{<: Dict}) = collect(values(node.components))
