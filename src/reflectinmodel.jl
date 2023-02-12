@@ -43,7 +43,7 @@ function _build_prod(x, scope::Vector{Symbol}, l::Int, n::Int; kwargs...)
     d = length(scope)
     @show scope, d, n
     l == 1 && return _build_prod(x, n; kwargs...)
-    d == 1 && return ProductNode(NamedTuple(map(_->k=>_reflectinmodel(x.data[k]; kwargs...), keys(x.data))...))
+    d == 1 && return ProductNode(NamedTuple(map(k->k=>_reflectinmodel(x.data[k]; kwargs...), keys(x.data))...))
     r = ceil(Int, d / 2)
     comp_sum = map(1:n) do _
         scope_l, scope_r = scope[1:r], scope[r+1:end]
