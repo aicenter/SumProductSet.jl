@@ -6,6 +6,39 @@ function gmm(n::Int, d::Int;
     SumNode([_MvNormal(d; ps...) for _ in 1:n]; dtype=dtype)
 end
 
+"""
+    spn(d::Int, l::Int, n::Int)
+    spn(d::Int, n::Vector{Int})
+
+Implement SumProduct Network for vector data with binary splitting ProductNodes.
+
+# Arguments
+- `d::Int`: the dimensionality of feature vector.
+- `l::Int`: the number of SumNode layers in the network. 
+    E.g., l= 2 means no have SumNode -> ProductNode -> SumNode -> leaf.
+- `n::Int`: the number of SumNode components (same for each layer).
+- `n::Vector{Int}`: the number of SumNode components (specified for each layer)
+# Examples
+```julia-repl
+julia> spn(10, 2, 2)
+SumNode
+  ├── ProductNode
+  │     ├── SumNode
+  │     │     ├── _MvNormal
+  │     │     ╰── _MvNormal
+  │     ╰── SumNode
+  │           ├── _MvNormal
+  │           ╰── _MvNormal
+  ╰── ProductNode
+        ├── SumNode
+        │     ├── _MvNormal
+        │     ╰── _MvNormal
+        ╰── SumNode
+              ├── _MvNormal
+              ╰── _MvNormal
+```
+
+"""
 function spn(d::Int, l::Int, n::Int)
     n == 1 && l == 1 && return _MvNormal(d)
     l == 1 && return SumNode(map(_->_MvNormal(d), 1:n)...)
