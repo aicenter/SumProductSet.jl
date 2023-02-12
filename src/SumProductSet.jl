@@ -26,7 +26,7 @@ export _Poisson, _Categorical, _MvNormal, _MvNormalParams
 export logpdf, logjnt
 export SumNode, ProductNode, SetNode
 export rand, randwithlabel
-export setmixture, gmm, sharedsetmixture
+export setmixture, gmm, sharedsetmixture, spn
 
 export reflectinmodel
 export ul_loss, sl_loss, ssl_loss
