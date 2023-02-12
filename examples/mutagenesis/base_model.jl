@@ -1,4 +1,4 @@
-using JsonGrinder, Flux, MLDatasets, Statistics, Random
+using JsonGrinder, Flux, MLDatasets, Statistics, Random, JSON3, HierarchicalUtils
 using SumProductSet
 import Mill
 
@@ -39,7 +39,9 @@ ds_train = Mill.catobs(extractor.(x_train))
 # remap labels from [0, 1] to [1, 2]
 y_train .+= 1
 
-m = reflectinmodel(ds_train[1], 2)
+m = reflectinmodel(ds_train[1], 2; depth_prod=1)
+
+printtree(m, htrunc=25, vtrunc=25)
 
 # create predict function
 predict = x->mapslices(argmax, logjnt(m, x), dims=1)[:] 
