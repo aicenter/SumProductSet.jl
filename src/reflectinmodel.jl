@@ -49,8 +49,11 @@ function _build_prod(x, scope::Vector{Symbol}, l::Int, n::Int; kwargs...)
         scope_l, scope_r = scope[1:r], scope[r+1:end]
         x_l, x_r = x[scope_l], x[scope_r]
 
-        comp_prod = [_build_prod(x_l, scope_l, l-1, n; kwargs...), _build_prod(x_r, scope_r, l-1, n; kwargs...)]
-        ProductNode(comp_prod...)
+        comp_prod_l = _build_prod(x_l, scope_l, l-1, n; kwargs...)
+        comp_prod_r = _build_prod(x_r, scope_r, l-1, n; kwargs...)
+        comp_prod = Dict(Set(scope_l)=> comp_prod_l, Set(scope_r)=> comp_prod_r)
+
+        ProductNode(comp_prod)
     end
     SumNode(comp_sum...)
 end
