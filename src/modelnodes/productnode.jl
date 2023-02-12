@@ -82,8 +82,7 @@ function logpdf(m::ProductNode{<:NamedTuple{KM}}, x::Mill.ProductNode{<:NamedTup
     mapreduce(k->logpdf(m.components[k], x.data[k]), +, KM)
 end
 
-Mill.getindex(x::Mill.ProductNode, k::Set{Symbol}) = Mill.ProductNode(NamedTuple(ki=>x[ki] for ki in collect(k)))
-
+# NOTE: indexing of Mill data nodes by set is implemented in util.jl
 function logpdf(m::ProductNode{<:Dict}, x::Mill.ProductNode{<:NamedTuple{KD}}) where {KM, KD}
     mapreduce(k->logpdf(m.components[k], x[k]), +, keys(m.components))
 end
@@ -111,4 +110,4 @@ HierarchicalUtils.nodeshow(io::IO, ::ProductNode) = print(io, "ProductNode")
 HierarchicalUtils.printchildren(node::ProductNode) = node.components
 
 # HierarchicalUtils.printchildren(node::ProductNode{<: Dict}) = [tuple(k...)=>v for (k, v) in node.components]
-HierarchicalUtils.printchildren(node::ProductNode{<: Dict}) = collect(values(node.components))
+# HierarchicalUtils.printchildren(node::ProductNode{<: Dict}) = collect(values(node.components))
