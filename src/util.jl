@@ -6,4 +6,4 @@ logpdf(m::NODES, x::AbstractVector{<:Mill.AbstractMillNode}) = Flux.ChainRulesCo
 end |> xr -> logpdf(m, xr)
 
 Mill.getindex(x::Mill.ProductNode{<:NamedTuple}, k::Union{Vector{Symbol}, NTuple{N, Symbol}}) where N = Mill.ProductNode(x.data[k])
-Mill.getindex(x::Mill.ProductNode{<:NamedTuple}, k::Set{Symbol}) = Mill.getindex(x, collect(k))
+Mill.getindex(x::Mill.ProductNode{<:NamedTuple}, k::Set{Symbol}) = Flux.ChainRulesCore.@ignore_derivatives Mill.getindex(x, collect(k))

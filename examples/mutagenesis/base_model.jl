@@ -39,7 +39,7 @@ ds_train = Mill.catobs(extractor.(x_train))
 # remap labels from [0, 1] to [1, 2]
 y_train .+= 1
 
-m = reflectinmodel(ds_train[1], 2; depth_prod=1)
+m = reflectinmodel(ds_train[1], 2; depth_prod=2)
 
 printtree(m, htrunc=25, vtrunc=25)
 
