@@ -1,6 +1,6 @@
 
-function gmm(n::Int, d::Int; 
-    dtype::Type{<:Real}=Float64, μinit::Symbol=:uniform, Σinit::Symbol=:unit, Σtype::Symbol=:full, r::Real=0.)
+function gmm(n::Int, d::Integer; 
+    dtype::Type{<:Real}=Float32, μinit::Symbol=:uniform, Σinit::Symbol=:unit, Σtype::Symbol=:diag, r::Real=0.)
 
     ps = (; dtype, μinit, Σinit, Σtype, r)
     SumNode([_MvNormal(d; ps...) for _ in 1:n]; dtype=dtype)

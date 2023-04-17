@@ -7,6 +7,7 @@ abstract type _Distribution{T} <: AbstractModelNode end
 include("poisson.jl")
 include("mvnormal.jl")
 include("categorical.jl")
+include("geometric.jl")
 
 ###
 #  compatibility with Mill

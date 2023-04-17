@@ -9,7 +9,7 @@ end
 Flux.@functor _Poisson
 
 _Poisson(logλ::Real) = _Poisson([logλ])
-_Poisson(logλ::Integer) = _Poisson(Float64(logλ))
+_Poisson(logλ::Integer) = _Poisson(Float32(logλ))
 _Poisson() = _Poisson(log(rand(2:5)))
 
 Base.rand(m::_Poisson) = pois_rand(exp(m.logλ[1]))

@@ -4,9 +4,7 @@ mutable struct _MvNormal{T, N} <: _Distribution{T}
     A::Array{T, N}
     r::T
 end
-function _MvNormal(b::Array{T, 1}, A::Array{T, N}) where {T, N}
-    _MvNormal{T, N}(b, A, zero(T))
-end
+_MvNormal{T, N}(b::Array{T, 1}, A::Array{T, N}) where {T, N} = _MvNormal(b, A, zero(T))
 
 Flux.@functor _MvNormal
 Flux.trainable(m::_MvNormal) = (m.b, m.A,)
@@ -23,7 +21,7 @@ function _MvNormalParams(μ::Array{T, 1}, Σ::Array{T, 1}, r::T=zero(T)) where {
     _MvNormal{T, 1}(b, A, r)
 end
 
-function _MvNormal(d::Int; dtype::Type{<:Real}=Float64, μinit::Symbol=:uniform, Σinit::Symbol=:unit, Σtype::Symbol=:full, r::Real=0.)
+function _MvNormal(d::Integer; dtype::Type{<:Real}=Float64, μinit::Symbol=:uniform, Σinit::Symbol=:unit, Σtype::Symbol=:full, r::Real=0.)
     # covariance initialization type selection
     if Σinit == :unit
         diagΣ = ones(dtype, d)
@@ -81,3 +79,12 @@ function logpdf(m::_MvNormal{T, 1}, x::Array{T, 2}) where {T<:Real}
     l[:]
 end
 logpdf(m::_MvNormal{T, 1}, x::Array{T, 1}) where {T<:Real} = logpdf(m, hcat(x))
+
+function logpdf(m::_MvNormal{T, 1}, x::Array{Maybe{T}, 2}) where {T<:Real}
+    z = (m.A .+ m.r) .* x .+ m.b
+    l = log.(abs.(m.A .+ m.r)) .- T(5e-1)*(log(T(2e0)*T(pi)) .+ z.^2)
+    l = coalesce.(l, T(0e0))
+    l = sum(l; dims=1)
+    l[:]
+end
+logpdf(m::_MvNormal{T, 1}, x::Array{Maybe{T}, 1}) where {T<:Real} = logpdf(m, hcat(x))

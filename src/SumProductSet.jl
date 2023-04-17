@@ -6,8 +6,15 @@ using StatsBase
 using HierarchicalUtils
 using PoissonRandom
 using LinearAlgebra
+using OneHotArrays
+using SparseArrays
 using Random
-import Mill
+using Mill
+
+const Maybe{T} = Union{T, Missing}
+const MaybeHotArray{T} = Union{MaybeHotVector{T}, MaybeHotMatrix{T}}
+const Code = Union{AbstractVector{<:Integer}, Base.CodeUnits}
+const Sequence = Union{AbstractString, Code}
 
 function logfactorial(x::Real)
     # sum(log.(collect(2:x)); init=zero(Float64))
