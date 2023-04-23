@@ -157,7 +157,7 @@ function commands()
     s = ArgParseSettings()
     @add_arg_table s begin
         ("--n"; arg_type = Int; default=1);
-        ("--m"; arg_type = Int; default=9);
+        ("--m"; arg_type = Int; default=1);
     end
     parse_args(s)
 end
@@ -198,7 +198,7 @@ function slurm()
         [1, 2, 3],
         [1, 2, 3],
         [400],
-        [8, 16, 32],
+        [10, 20, 30],
         [1f-0],
         [1],
         collect(1:5)))[n]

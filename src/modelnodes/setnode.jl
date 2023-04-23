@@ -50,7 +50,7 @@ end
 """
 function logpdf(m::SetNode, x::Mill.BagNode)
     lp_inst = logpdf(m.feature, x.data)
-    mapreduce(b->logpdf(m.cardinality, length(b)) + sum(lp_inst[b]) + logfactorial(length(b)), vcat, x.bags)
+    mapreduce(b->logpdf(m.cardinality, length(b)) .+ sum(lp_inst[b]; dims=1) .+ logfactorial(length(b)), vcat, x.bags)
 end
 
 ####
