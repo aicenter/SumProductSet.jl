@@ -8,6 +8,8 @@ include("poisson.jl")
 include("mvnormal.jl")
 include("categorical.jl")
 include("geometric.jl")
+include("mber.jl")
+include("mgeo.jl")
 
 ###
 #  compatibility with Mill

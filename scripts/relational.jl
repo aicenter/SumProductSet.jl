@@ -30,21 +30,6 @@ function logjnt(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode}, y)
 end
 
 
-function default_scalar_extractor()
-	[
-	(e -> length(keys(e)) <= 100 && JsonGrinder.is_numeric_or_numeric_string(e),
-		(e, uniontypes) -> ExtractCategorical(keys(e), uniontypes)),
-	(e -> JsonGrinder.is_intable(e),
-		(e, uniontypes) -> extractscalar(Int64, e, uniontypes)),
-	(e -> JsonGrinder.is_floatable(e),
-	 	(e, uniontypes) -> extractscalar(Float64, e, uniontypes)),
-	(e -> (keys_len = length(keys(e)); keys_len / e.updated < 0.1 && keys_len < 10000 && !JsonGrinder.is_numeric_or_numeric_string(e)),
-		(e, uniontypes) -> ExtractCategorical(keys(e), uniontypes)),
-	(e -> true,
-		(e, uniontypes) -> ExtractScalar(Float64, 0., 1., false)),]
-end
-
-
 Base.length(x::Mill.ProductNode) = Mill.nobs(x)
 predict(m, x) = mapslices(argmax, SumProductSet.logjnt(m, x), dims=1)[:]
 
@@ -146,7 +131,7 @@ datasets = [
     (name="cora",            ndata=2708,  nclass=7 ) # 3
     (name="citeseer",        ndata=3312,  nclass=6 ) # 4
     (name="webkp",           ndata=877,   nclass=5 ) # 5
-    (name="pubmed_diabetes", ndata=19717, nclass=3 ) # 6
+    (name="world",           ndata=239,   nclass=7 ) # 6
     (name="craft_beer",      ndata=558,   nclass=51) # 7
     (name="chess",           ndata=295,   nclass=3 ) # 8
     (name="uw_cse",          ndata=278,   nclass=4 ) # 9
@@ -167,13 +152,12 @@ function estimate(config::NamedTuple)
 	data = read("$(dirdata)/$(dataset).json", String)
 	data = JSON3.read(data)
     x, y = data.x, data.y
+    # JSON3.pretty(data.x)
 
-    sch = JsonGrinder.schema(x)
-    # printtree(sch, htrunc=25, vtrunc=25)
-    extractor = suggestextractor(sch)
-    # extractor = suggestextractor(sch, (; scalar_extractors = default_scalar_extractor()))
-    x = Mill.catobs(extractor.(x))
-    printtree(x, htrunc=25, vtrunc=25)
+    s = JsonGrinder.schema(x)
+    e = suggestextractor(s)
+    # e = suggestextractor(s, (; scalar_extractors = default_scalar_extractor()))
+    x = Mill.catobs(e.(x))
     x_trn, x_val, x_tst, y_trn, y_val, y_tst = split(x, y, seed_split)
 
     Random.seed!(seed_init)

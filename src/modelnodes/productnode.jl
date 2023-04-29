@@ -20,94 +20,40 @@ julia> logpdf(m, x)
  -51.62330239036811
 ```
 """
-COMP_TYPES = Union{Tuple, NamedTuple, Dict}
-struct ProductNode{T<:COMP_TYPES, U<:NTuple{N, UnitRange{Int}} where N} <: AbstractModelNode
-    components::T
-    dimensions::U
+struct ProductNode{C<:AbstractModelNode, D<:Union{UnitRange{Int}, Tuple{Vararg{T}}, T} where {T<:Symbol}} <: AbstractModelNode
+    components::Vector{C}
+    dimensions::Vector{D}
 end
 
 Flux.@functor ProductNode
 Flux.trainable(m::ProductNode) = (m.components,)
 
-Base.length(m::ProductNode) = m.dimensions[end].stop
-Base.getindex(m::ProductNode, i...) = getindex(m.components, i...)
-Base.haskey(m::ProductNode{<:NamedTuple}, k::Symbol) = haskey(m.components, k)
-
-"""
-    ProductNode(ps::Union{Tuple, NamedTuple})
-
-Construct ProductNode with `ps` independent random variables. `ps` should be 
-iterable (`Tuple` or `NamedTuple`) of one or more `AbstractModelNode`s.
-
-# Examples
-```jldoctest
-julia> ProductNode(_MvNormal(3), _Categotical(10))
-ProductNode
-  ├── _MvNormal
-  ╰── _Categorical
-julia> ProductNode(a=_MvNormal(3), b=_Categorical(10))
-ProductNode
-  ├── a: _MvNormal
-  ╰── b: _Categorical
-```
-
-"""
-function ProductNode(ps::Union{Tuple, NamedTuple, Dict})
-    dimensions = Vector{UnitRange{Int}}(undef, length(ps))
-    start = 1
-    for (i, p) in enumerate(ps)
-        l = length(p)
-        dimensions[i] = start:start + l - 1
-        start += l
-    end
-    ProductNode(ps, tuple(dimensions...))
-end
-ProductNode(ms::AbstractModelNode...) = ProductNode(ms)
-ProductNode(;ms...) = ProductNode(NamedTuple(ms))
+ProductNode(c::AbstractModelNode, d::Union{UnitRange{Int}, Tuple{Vararg{T}}, T}) where {T<:Symbol} = ProductNode([c], [d]) # best to get rid of this in future
 
 ####
 #	Functions for calculating full likelihood
 ####
 
-function logpdf(m::ProductNode{<:Tuple}, x::AbstractMatrix{<:Real})
-    mapreduce((c, d)->logpdf(c, x[d, :]), +, m.components, m.dimensions)
-end
-logpdf(m::ProductNode, x::Mill.ArrayNode) = logpdf(m, x.data)
-
-function logpdf(m::ProductNode{<:Tuple}, x::Mill.ProductNode{<:Tuple})
-    mapreduce((c, i)->logpdf(c, x.data[i]), +, m.components, 1:length(m.components))
-end
-
-function logpdf(m::ProductNode{<:NamedTuple{KM}}, x::Mill.ProductNode{<:NamedTuple{KD}}) where {KM, KD}
-    mapreduce(k->logpdf(m.components[k], x.data[k]), +, KM)
-end
-
-# NOTE: indexing of Mill data nodes by set is implemented in util.jl
-function logpdf(m::ProductNode{<:Dict}, x::Mill.ProductNode{<:NamedTuple{KD}}) where {KM, KD}
-    mapreduce(k->logpdf(m.components[k], x[k]), +, keys(m.components))
-end
+logpdf(m::ProductNode, x::AbstractMatrix)   = mapreduce((c, d)->logpdf(c, x[d, :]), +, m.components, m.dimensions)
+logpdf(m::ProductNode, x::Mill.ProductNode) = mapreduce((c, d)->logpdf(c, x[d]),    +, m.components, m.dimensions)
 
 ####
-#	Functions for sampling the model
+#	Functions for generating random samples
 ####
 
-_reshape(x::Vector{Int}) = reshape(x, 1, :)  # specially for 1D distributions
-_reshape(x) = x
+# Base.rand(m::ProductNode) = rand(m, 1)
+# Base.rand(m::ProductNode, n::Int) = Mill.ProductNode(map((k, c)->k=>rand(c, n) |> _reshape, m.components, m.dimensions))
 
-Base.rand(m::ProductNode, n::Int) = mapreduce(c->rand(c, n) |> _reshape, vcat, m.components)
-Base.rand(m::ProductNode) = rand(m, 1)
-
-function Base.rand(m::ProductNode{<:NamedTuple{KM}}, n::Int) where KM
-    Mill.ProductNode( map( k-> rand(m[k], n) |> _reshape, KM) )
-end
+# _reshape(x::Vector{Int}) = reshape(x, 1, :)
+# _reshape(x) = x
 
 ####
 #	Functions for making the library compatible with HierarchicalUtils
 ####
 
 HierarchicalUtils.NodeType(::Type{<:ProductNode}) = InnerNode()
-HierarchicalUtils.nodeshow(io::IO, ::ProductNode) = print(io, "ProductNode")
+HierarchicalUtils.nodeshow(io::IO, m::ProductNode) = (print(io, "ProductNode "), _print(io, m.dimensions))
 HierarchicalUtils.printchildren(node::ProductNode) = node.components
 
-# HierarchicalUtils.printchildren(node::ProductNode{<: Dict}) = [tuple(k...)=>v for (k, v) in node.components]
-# HierarchicalUtils.printchildren(node::ProductNode{<: Dict}) = collect(values(node.components))
+_print(io, x::Vector{T}) where {T<:Symbol} = print(io, "$(Tuple(x))")
+_print(io, x::Vector{T}) where {T<:Tuple{Vararg{<:Symbol}}} = foreach(d->print(io, "$(d) "), x)

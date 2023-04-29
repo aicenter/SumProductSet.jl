@@ -27,11 +27,6 @@ julia> logpdf(m, x)
 struct SumNode{T<:Real, C<:AbstractModelNode} <: AbstractModelNode
     components::Vector{C}
     prior::Vector{T}
-    function SumNode(components::Vector{C}, prior::Vector{T}) where {T,C}
-        ls = length.(components)
-        @assert all(ls .== ls[1])
-        new{T,C}(components, prior)
-    end
 end
 
 """
