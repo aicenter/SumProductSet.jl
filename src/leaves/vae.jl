@@ -29,7 +29,7 @@ end
 Flux.@functor Decoder
 (m::Decoder)(x::AbstractArray) = m.body(x)
 
-struct VAE{E<:Encoder, D<:Decoder} <: _Distribution{Float64}
+struct VAE{E<:Encoder, D<:Decoder} <: Distribution{Float64}
     encoder::E
     decoder::D
 end

@@ -1,6 +1,6 @@
 
-@testset "_Poisson --- logpdf forward" begin
-	m = _Poisson(log(5))
+@testset "Poisson --- logpdf forward" begin
+	m = SumProductSet.Poisson(log(5))
     xs = [rand(1:20, 10), 2, 100., 0]
 
     for x in xs
@@ -9,14 +9,13 @@
 
 end
 
-@testset "_Poisson --- rand sampling" begin
-    m = _Poisson(log(6))
+@testset "Poisson --- rand sampling" begin
+    m = SumProductSet.Poisson(log(6))
     @test length(rand(m)) == length(m.logλ)
 end
 
-@testset "_Poisson --- integration with Flux" begin
-
-	m = _Poisson(log(5))
+@testset "Poisson --- integration with Flux" begin
+	m = SumProductSet.Poisson(log(5))
     truegrad(logλ, x) = -exp.(logλ) .+ x  # d(SumProductSet.logpdf(Poiss(x ; logλ))) / d(logλ)
 	ps = Flux.params(m)
 
@@ -29,11 +28,11 @@ end
     end
 end
 
-@testset "_Poisson --- correctness" begin
+@testset "Poisson --- correctness" begin
     λ = 5
     n = 100
-    m1 = Poisson(λ)
-    m2 = _Poisson(log(λ))
+    m1 = Distributions.Poisson(λ)
+    m2 = SumProductSet.Poisson(log(λ))
     x1 = rand(m1, n) 
     x2 = rand(m2, n)
 

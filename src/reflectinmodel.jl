@@ -14,7 +14,7 @@ x = Mill.ProductNode(a=z, b=z, c=z, d=z);
 reflectinmodel(x, 2; depth_prod=2, n_prod_mix=2)
 ```
 """
-reflectinmodel(x, n::Integer; n_set_mix::Int=1, depth_prod::Int=1, n_prod_mix::Int=1, f_cont=d->gmm(2, d), f_cat=d->_Categorical(d), f_disc=d->_Geometric(d), f_card=()->_Poisson(), dtype::Type{<:Real}=Float32) =
+reflectinmodel(x, n::Integer; n_set_mix::Int=1, depth_prod::Int=1, n_prod_mix::Int=1, f_cont=d->gmm(2, d), f_cat=d->Categorical(d), f_disc=d->Geometric(d), f_card=()->Poisson(), dtype::Type{<:Real}=Float32) =
     _reflectinmodel(x; (; n_set_mix, depth_prod, n_prod_mix=vcat(n, repeat([n_prod_mix], 99)), f_cont, f_cat, f_disc, f_card, dtype)...)
 
 function _reflectinmodel(x::Mill.ProductNode; kwargs...)

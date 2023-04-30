@@ -1,7 +1,6 @@
 using Flux, Graphs, Statistics, Plots, GraphPlot, Zygote
 using Cairo, Compose
 using SumProductSet
-import Distributions
 import Mill
 
 # x = readlines("data/out.ucidata-zachary");
@@ -13,9 +12,9 @@ g = smallgraph(:karate)
 vs = collect(vertices(g))
 x = Flux.onehotbatch(vs, vs)
 bn = Mill.BagNode(x, g.fadjlist)
-dir_rand = d->rand(Distributions.Dirichlet(d, 5*d))
-f_cat = d->_Categorical(log.(dir_rand(d)))
-m = reflectinmodel(bn[1], 2; f_card=()->_Poisson(log(3)), f_cat=f_cat)
+dir_rand(d) = (r = rand(d); return r ./ sum(r))
+f_cat = d->Categorical(log.(dir_rand(d)))
+m = reflectinmodel(bn[1], 2; f_card=()->Poisson(log(3)), f_cat=f_cat)
 
 function ul_loss(m::SumNode, xu)
     # E-step for unlabeled data

@@ -1,7 +1,7 @@
 
-@testset "_Categorical --- logpdf forward" begin
+@testset "Categorical --- logpdf forward" begin
 	n = 10
-    m = _Categorical(n)
+    m = SumProductSet.Categorical(n)
     x1 = rand(1:n, 100)
     x2 = 6
 
@@ -9,17 +9,17 @@
     @test size(SumProductSet.logpdf(m, x2)) == size(x2)
 end
 
-@testset "_Categorical --- rand sampling" begin
+@testset "Categorical --- rand sampling" begin
     n = 5
-    m = _Categorical(n)
+    m = SumProductSet.Categorical(n)
     @test length(rand(m)) == 1
     nobs = 20
     @test length(rand(m, nobs)) == nobs
 end
 
-@testset "_Categorical --- integration with Flux" begin
+@testset "Categorical --- integration with Flux" begin
     n = 10
-	m = _Categorical(n)
+	m = SumProductSet.Categorical(n)
 	ps = Flux.params(m)
 
     @test !isempty(ps)
@@ -27,11 +27,11 @@ end
     @test !isnothing(gradient(() -> sum(SumProductSet.logpdf(m, x)), ps))
 end
 
-@testset "_Categorical --- correctness" begin
+@testset "Categorical --- correctness" begin
     p = [0.1, 0.3, 0.15, 0.45]
     n = 100
-    m1 = Categorical(p)
-    m2 = _Categorical(log.(p))
+    m1 = Distributions.Categorical(p)
+    m2 = SumProductSet.Categorical(log.(p))
     x1 = rand(m1, n) 
     x2 = rand(m2, n)
 
@@ -39,10 +39,10 @@ end
     @test Distributions.logpdf.(m1, x2) ≈ SumProductSet.logpdf(m2, x2)
 end
 
-@testset "_Categorical --- integration with OneHotArrays" begin
+@testset "Categorical --- integration with OneHotArrays" begin
     n = 20
     c = 10
-	m = _Categorical(c)
+	m = SumProductSet.Categorical(c)
     ps = Flux.params(m)
 
     x = rand(m)

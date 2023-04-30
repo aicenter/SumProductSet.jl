@@ -142,7 +142,7 @@ function commands()
     s = ArgParseSettings()
     @add_arg_table s begin
         ("--n"; arg_type = Int; default=1);
-        ("--m"; arg_type = Int; default=1);
+        ("--m"; arg_type = Int; default=3);
     end
     parse_args(s)
 end
@@ -179,8 +179,8 @@ function slurm()
     @unpack n, m = commands()
     dataset = datasets[m]
     pl, ps, nepoc, bsize, supervision, seed_split, seed_init = collect(Iterators.product(
-        [1, 2, 3],
-        [1, 2, 3],
+        [2, 3],
+        [2, 3],
         [400],
         [10, 20, 30],
         [1f-0],

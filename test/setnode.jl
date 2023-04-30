@@ -15,7 +15,7 @@ import Mill
     AN = Mill.ArrayNode(x)
     BN = Mill.BagNode(AN, bagids)
 
-    m = SetNode(_MvNormal(d), _Poisson(1.))
+    m = SetNode(SumProductSet.MvNormal(d), SumProductSet.Poisson(1.))
 
 	@test !isnothing(SumProductSet.logpdf(m, BN))
     @test length(SumProductSet.logpdf(m, BN)) == nbags 
@@ -25,18 +25,17 @@ end
 
 @testset "SetNode --- rand sampling" begin
     d = 2
-	m = SetNode(_MvNormal(d), _Poisson(1.))
+	m = SetNode(SumProductSet.MvNormal(d), SumProductSet.Poisson(1.))
 
     n = 10
     @test typeof(rand(m, n)) <: Mill.BagNode
     @test nobs(rand(m, n)) == n
-
 end
 
 
 @testset "SetNode --- integration with Flux" begin
     d = 2
-	m = SetNode(_MvNormal(d), _Poisson(1.))
+	m = SetNode(SumProductSet.MvNormal(d), SumProductSet.Poisson(1.))
     ps = Flux.params(m)
 
     @test !isempty(ps)

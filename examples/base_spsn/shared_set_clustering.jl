@@ -27,11 +27,11 @@ sμ = [[7.5, 7.5]]
 sΣ = [[3. 1.6; 1.6 6]]
 
 function knownsharedsetmixture(sμ, sΣ, μ, Σ, λ, prior)
-    sharedcomps = [_MvNormalParams(sμi, sΣi) for (sμi, sΣi) in zip(sμ, sΣ)]
+    sharedcomps = [MvNormalParams(sμi, sΣi) for (sμi, sΣi) in zip(sμ, sΣ)]
 
     bagcomps = map(zip(μ, Σ, λ)) do (μi, Σi, λi)
-        nonsharedcomps = [_MvNormalParams(μi, Σi)]
-        pc = _Poisson(log(λi))
+        nonsharedcomps = [MvNormalParams(μi, Σi)]
+        pc = Poisson(log(λi))
         pf = SumNode([nonsharedcomps; sharedcomps])
         SetNode(pf, pc)
     end

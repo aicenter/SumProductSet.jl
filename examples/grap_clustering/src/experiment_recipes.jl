@@ -3,7 +3,6 @@ using JSON
 using JsonGrinder
 using Cairo, Compose
 using SumProductSet
-import Distributions
 import Mill
 
 n_samples, n_val = 3000, 4774
@@ -39,7 +38,7 @@ accuracy(y, x) = mean(y .== predict(x))
 function train!(m, x, y; niter::Int=200, opt=ADAM(0.02))
     ps = Flux.params(m)
 
-    loss = () -> -mean( logjnt(m, x)[CartesianIndex.(y, 1:length(y))])
+    loss = ()->-mean(logjnt(m, x)[CartesianIndex.(y, 1:length(y))])
     for i in 1:niter
         println("Iter $(i) ll: $(mean(logpdf(m, x))), acc: $(accuracy(y, x))")
         gs = gradient(loss, ps)

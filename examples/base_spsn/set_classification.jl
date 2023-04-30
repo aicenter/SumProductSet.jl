@@ -31,8 +31,8 @@ end
 ### Contructor of known model
 function knownsetmixture(μs, Σs, λs, prior)
     components = map(zip(μs, Σs, λs)) do ps
-        pc = _Poisson(log(ps[3]))
-        pf = _MvNormalParams(ps[1], ps[2])
+        pc = Poisson(log(ps[3]))
+        pf = MvNormalParams(ps[1], ps[2])
         SetNode(pf, pc)
     end
     SumNode(components, prior)    
