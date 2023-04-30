@@ -32,7 +32,7 @@ function _reflectinmodel(x::Mill.BagNode; kwargs...)
     n_set_mix = kwargs[:n_set_mix]
     f_card = kwargs[:f_card]
     f_inst = ()->_reflectinmodel(x.data; kwargs...)
-    n_set_mix == 1 ? SetNode(f_inst(), f_card()) : SumNode(map(_->SetNode(f_inst(), f_card()), 1:n_set_mix)...)
+    n_set_mix == 1 ? SetNode(f_inst(), f_card()) : SumNode(map(_->SetNode(f_inst(), f_card()), 1:n_set_mix))
 end
 
 _reflectinmodel(x::Mill.ArrayNode; kwargs...) = _reflectinmodel(x.data; kwargs...)
@@ -48,7 +48,7 @@ _reflectinmodel(x::NGramMatrix{Maybe{T}}; kwargs...) where T <: Sequence = kwarg
 function _productmodel(x, n::Int; kwargs...)
     k = keys(x.data)
     c = map(_->ProductNode(mapreduce(k->_reflectinmodel(x.data[k]; kwargs...), vcat, k), reduce(vcat, k)), 1:n)
-    n == 1 ? first(c) : SumNode(c...)
+    n == 1 ? first(c) : SumNode(c)
 end
 function _productmodel(x, scope::NTuple{N, Symbol}, l::Int, n::Int; kwargs...) where {N}
     d = length(scope)
@@ -62,5 +62,5 @@ function _productmodel(x, scope::NTuple{N, Symbol}, l::Int, n::Int; kwargs...) w
         comps_r = _productmodel(x[scope_r], scope_r, l-1, n; kwargs...)
         ProductNode([comps_l, comps_r], [scope_l, scope_r])
     end
-    SumNode(c...)
+    SumNode(c)
 end

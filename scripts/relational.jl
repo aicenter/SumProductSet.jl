@@ -25,7 +25,7 @@ import Mill
 
 
 function logjnt(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode}, y)
-    l = transpose(mapreduce(c->logpdf(c, x), hcat, m.components)) .+ logsoftmax(m.prior)
+    l = mapreduce(c->logpdf(c, x), vcat, m.components) .+ logsoftmax(m.weights)
     l[CartesianIndex.(y, 1:length(y))]
 end
 
@@ -142,7 +142,7 @@ function commands()
     s = ArgParseSettings()
     @add_arg_table s begin
         ("--n"; arg_type = Int; default=1);
-        ("--m"; arg_type = Int; default=3);
+        ("--m"; arg_type = Int; default=1);
     end
     parse_args(s)
 end

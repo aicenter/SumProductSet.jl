@@ -10,10 +10,10 @@ julia> x = Mill.ProductNode(a=Mill.ArrayNode([0. 1; 2 3]), b=Mill.ArrayNode([4. 
 ProductNode  # 2 obs, 16 bytes
   ├── a: ArrayNode(2×2 Array with Float64 elements)  # 2 obs, 80 bytes
   ╰── b: ArrayNode(2×2 Array with Float64 elements)  # 2 obs, 80 bytes
-julia> m = ProductNode(a=_MvNormal(2), b=_MvNormal(2))
+julia> m = ProductNode(a=MvNormal(2), b=MvNormal(2))
 ProductNode
-  ├── a: _MvNormal
-  ╰── b: _MvNormal
+  ├── a: MvNormal
+  ╰── b: MvNormal
 julia> logpdf(m, x)
 2-element Vector{Float64}:
  -36.468016427033014
@@ -31,14 +31,14 @@ Flux.trainable(m::ProductNode) = (m.components,)
 ProductNode(c::AbstractModelNode, d::Union{UnitRange{Int}, Tuple{Vararg{T}}, T}) where {T<:Symbol} = ProductNode([c], [d]) # best to get rid of this in future
 
 ####
-#	Functions for calculating full likelihood
+#	  Functions for calculating the likelihood
 ####
 
 logpdf(m::ProductNode, x::AbstractMatrix)   = mapreduce((c, d)->logpdf(c, x[d, :]), +, m.components, m.dimensions)
 logpdf(m::ProductNode, x::Mill.ProductNode) = mapreduce((c, d)->logpdf(c, x[d]),    +, m.components, m.dimensions)
 
 ####
-#	Functions for generating random samples
+#	  Functions for generating random samples
 ####
 
 # Base.rand(m::ProductNode) = rand(m, 1)
@@ -48,12 +48,17 @@ logpdf(m::ProductNode, x::Mill.ProductNode) = mapreduce((c, d)->logpdf(c, x[d]),
 # _reshape(x) = x
 
 ####
-#	Functions for making the library compatible with HierarchicalUtils
+#	  Functions for making the library compatible with HierarchicalUtils
 ####
 
 HierarchicalUtils.NodeType(::Type{<:ProductNode}) = InnerNode()
 HierarchicalUtils.nodeshow(io::IO, m::ProductNode) = (print(io, "ProductNode "), _print(io, m.dimensions))
-HierarchicalUtils.printchildren(node::ProductNode) = node.components
+HierarchicalUtils.printchildren(m::ProductNode) = m.components
 
 _print(io, x::Vector{T}) where {T<:Symbol} = print(io, "$(Tuple(x))")
 _print(io, x::Vector{T}) where {T<:Tuple{Vararg{<:Symbol}}} = foreach(d->print(io, "$(d) "), x)
+
+
+####
+#	  Utilities
+####

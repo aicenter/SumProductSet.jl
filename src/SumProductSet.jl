@@ -16,10 +16,7 @@ const MaybeHotArray{T} = Union{MaybeHotVector{T}, MaybeHotMatrix{T}}
 const Code = Union{AbstractVector{<:Integer}, Base.CodeUnits}
 const Sequence = Union{AbstractString, Code}
 
-function logfactorial(x::Real)
-    # sum(log.(collect(2:x)); init=zero(Float64))
-    sum(log.(collect(2:x)))
-end
+logfactorial(x::Real) = sum(log.(collect(2:x)))
 
 include("modelnodes/modelnode.jl")
 include("distributions/distributions.jl")
@@ -29,7 +26,7 @@ include("leaves/vae.jl")
 include("reflectinmodel.jl")
 include("loss.jl")
 
-export _Poisson, _Categorical, _MvNormal, _MvNormalParams
+export Poisson, Categorical, MvNormal, MvNormalParams
 export logpdf, logjnt
 export SumNode, ProductNode, SetNode
 export rand, randwithlabel

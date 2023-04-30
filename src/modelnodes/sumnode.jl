@@ -6,10 +6,10 @@ Implement a mixture of identically distributed `AbstractModelNode`s as `Abstract
 # Examples
 ```jldoctest
 julia> Random.seed!(0);
-julia> m = SumNode(_MvNormal(3), _MvNormal(3))
+julia> m = SumNode(MvNormal(3), MvNormal(3))
 SumNode
-  ├── _MvNormal
-  ╰── _MvNormal
+  ├── MvNormal
+  ╰── MvNormal
 julia> x = rand(m, 5)
 3×5 Matrix{Float64}:
  -2.24964   -1.77245  0.103564  -0.213714  -0.751201
@@ -26,101 +26,64 @@ julia> logpdf(m, x)
 """
 struct SumNode{T<:Real, C<:AbstractModelNode} <: AbstractModelNode
     components::Vector{C}
-    prior::Vector{T}
+    weights::Vector{T}
 end
-
-"""
-    SumNode(components::Vector, prior::Vector)
-    SumNode(components::Vector; dtype::Type{<:Real}) 
-
-    Mixture of components. Each component has to be a valid pdf. If prior vector 
-    is not provided, it is initialized uniformly.
-
-    # Arguments
-    - `components::Vector{C}`: Vector of components of same type.
-    - `prior::Vector{T}`: Vector of log sumnode-weights, there is one weight for every component.
-    - `dtype::Type{<:Real}` : Data type which initialized `prior` should have.
-"""
-function SumNode(components::Vector; dtype::Type{<:Real}=Float64) 
-    n = length(components); 
-    SumNode(components, ones(dtype, n))
-end
-SumNode(ms::AbstractModelNode...) = SumNode(collect(ms))
-
-Base.getindex(m::SumNode, i::Int) = (c = m.components[i], p = m.prior[i])
-Base.length(m::SumNode) = length(m.components[1])
 
 Flux.@functor SumNode
 
-"""
-    logjnt(node, x)
-
-log-jointlikelihood log p(x, y) of samples `x` and class/cluster labels `y` of a model `node`
-"""
-function logjnt(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode})
-    logcmps = transpose(mapreduce(c->logpdf(c, x), hcat, m.components))
-    logw = logsoftmax(m.prior)
-    logcmps .+ logw
-end
-
-"""
-    logpdf(node, x)
-
-log-likelihood of samples `x` of a model `node`
-"""
-function logpdf(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode})
-    vec(logsumexp(logjnt(m, x), dims=1))
-end
+SumNode(c::Vector; dtype::Type{<:Real}=Float64) = SumNode(c, ones(dtype, length(c)))
 
 ####
-#	Functions for sampling the model
+#   Functions for calculating the likelihood
 ####
 
-_sampleids(m::SumNode, n::Int) = sample(1:length(m.prior), Weights(softmax(m.prior)), n)
-_sampleids(m::SumNode) = _sampleids(m, 1)[]
+logjnt(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode}) = mapreduce(c->logpdf(c, x), vcat, m.components) .+ logsoftmax(m.weights)
+logpdf(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode}) = logsumexp(logjnt(m, x), dims=1)
 
-function Base.rand(m::SumNode, n::Int)
-    if n == 0 
-        return zeros(eltype(m.prior), length(m), 0)
-    else
-        return hcat(rand.(m.components[_sampleids(m, n)])...)
-    end
-end
-Base.rand(m::SumNode) = rand(m, 1)
+####
+#   Functions for generating random samples
+####
 
-function Base.rand(m::SumNode{<:Real, <:SetNode}, n::Int)
-    if n == 0 
-        return missing
-    else
-        return Mill.catobs(rand.(m.components[_sampleids(m, n)])...)
-    end
-end
-# Base.rand(m::SumNode{T, C} where C<:SetNode) where T<:Real = rand(m.components[_sampleids(m)])
-Base.rand(m::SumNode{<:Real, <:SetNode}) = rand(m.components[_sampleids(m)])
+_samplelatent(m::SumNode, n::Int) = sample(1:length(m.weights), Weights(softmax(m.weights)), n)
+_samplelatent(m::SumNode) = _samplelatent(m, 1)[]
+
+Base.rand(m::SumNode,                    n::Int) = rand.(m.components[_samplelatent(m, n)])... |> hcat
+Base.rand(m::SumNode{<:Real, <:SetNode}, n::Int) = rand.(m.components[_samplelatent(m, n)])... |> Mill.catobs
+
+Base.rand(m::SumNode)                    = rand(m, 1)
+Base.rand(m::SumNode{<:Real, <:SetNode}) = rand(m.components[_samplelatent(m)], 1)
 
 function randwithlabel(m::SumNode, n::Int)
-    ids = _sampleids(m, n)
-    x = hcat(rand.(m.components[ids])...)
-    x, ids
+    i = _samplelatent(m, n)
+    x = hcat(rand.(m.components[i])...)
+    x, i
 end
 function randwithlabel(m::SumNode)
-    xm, ids = randwithlabel(m, 1)
-    xm, ids[]
+    x, i = randwithlabel(m, 1)
+    x, i[]
 end
 
 function randwithlabel(m::SumNode{<:Real, <:SetNode}, n::Int)
-    ids = _sampleids(m, n)
-    x = Mill.catobs(rand.(m.components[ids])...)
-    x, ids
+    i = _samplelatent(m, n)
+    x = Mill.catobs(rand.(m.components[i])...)
+    x, i
 end
 function randwithlabel(m::SumNode{<:Real, <:SetNode})
-    xm, ids = randwithlabel(m, 1)
-    xm, ids[]
+    x, i = randwithlabel(m, 1)
+    x, i[]
 end
 
 ####
-#	Functions for making the library compatible with HierarchicalUtils
+#   Functions for making the library compatible with HierarchicalUtils
 ####
+
 HierarchicalUtils.nodeshow(io::IO, ::SumNode) = print(io, "SumNode")
 HierarchicalUtils.NodeType(::Type{<:SumNode}) = InnerNode()
-HierarchicalUtils.printchildren(node::SumNode) = tuple(node.components...)
+HierarchicalUtils.printchildren(m::SumNode) = tuple(m.components...)
+
+####
+#   Utilities
+####
+
+# Base.getindex(m::SumNode, i::Int) = (c = m.components[i], p = m.weights[i])
+# Base.length(m::SumNode) = length(m.components[1])

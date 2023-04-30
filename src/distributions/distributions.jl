@@ -1,21 +1,20 @@
 
 abstract type Distribution{T} <: AbstractModelNode end
 
-###
-#   concrete distributions import
-###
 include("poisson.jl")
 include("mvnormal.jl")
 include("categorical.jl")
 include("geometric.jl")
 
-###
-#  compatibility with Mill
-###
+####
+#	Functions for making the library compatible with Mill
+####
+
 logpdf(d::Distribution, x::Mill.ArrayNode) = logpdf(d, x.data)
 
 ####
-#  compatibility with HierarchicalUtils
+#	Functions for making the library compatible with HierarchicalUtils
 ####
+
 HierarchicalUtils.nodeshow(io::IO, ::T) where {T<:Distribution} = print(io, "$(nameof(T))")
 HierarchicalUtils.NodeType(::Type{<:Distribution}) = LeafNode()
