@@ -29,7 +29,7 @@ s = JsonGrinder.schema(x)
 e = suggestextractor(s)
 x = Mill.catobs(e.(x))
 
-m = SumProductSet.reflectinmodel(x[1], length(unique(y)); depth_prod=2, n_prod_mix=2)
+m = SumProductSet.reflectinmodel(x[1], length(unique(y)); hete_nl=2, hete_ns=2)
 
 # printtree(s, htrunc=25, vtrunc=25)
 # printtree(x, htrunc=25, vtrunc=25)

@@ -22,7 +22,7 @@ end
 #   Functions for calculating the likelihood
 ####
 
-_logpdf(x::Array{T, 2}) where {T<:Real} = -T(5e-1)*(log(T(2e0)*T(pi)) .+ x.^2)
+_logpdf(x::Union{Array{T, 2}, Array{Maybe{T}, 2}}) where {T<:Real} = -T(5e-1)*(log(T(2e0)*T(pi)) .+ x.^2)
 
 logpdf(m::MvNormal{T, 2}, x::Array{T, 2})        where {T<:Real} = log(abs(det(m.A + m.r * I)))     .+ sum(_logpdf((m.A  + m.r * I)  * x .+ m.b),          dims=1)
 logpdf(m::MvNormal{T, 1}, x::Array{T, 2})        where {T<:Real} = sum(log.(abs.(m.A .+ m.r)))      .+ sum(_logpdf((m.A .+ m.r)     .* x .+ m.b),          dims=1)

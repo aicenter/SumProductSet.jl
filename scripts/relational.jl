@@ -142,7 +142,7 @@ function commands()
     s = ArgParseSettings()
     @add_arg_table s begin
         ("--n"; arg_type = Int; default=1);
-        ("--m"; arg_type = Int; default=1);
+        ("--m"; arg_type = Int; default=7);
     end
     parse_args(s)
 end
@@ -162,7 +162,7 @@ function estimate(config::NamedTuple)
 
     Random.seed!(seed_init)
 
-    m = reflectinmodel(x_trn[1], length(unique(y)); depth_prod=pl, n_prod_mix=ps)
+    m = reflectinmodel(x_trn[1], length(unique(y)); hete_nl=pl, hete_ns=ps)
     # printtree(m, htrunc=25, vtrunc=25)
 
     record = gd!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, Adam(0.1), nepoc, bsize, supervision)
