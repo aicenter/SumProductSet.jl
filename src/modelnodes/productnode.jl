@@ -20,7 +20,7 @@ julia> logpdf(m, x)
  -51.62330239036811
 ```
 """
-struct ProductNode{C<:AbstractModelNode, D<:Union{UnitRange{Int}, Tuple{Vararg{T}}, T} where {T<:Symbol}} <: AbstractModelNode
+struct ProductNode{C<:AbstractModelNode, D<:Union{UnitRange{Int}, Vector{T}, T} where {T<:Symbol}} <: AbstractModelNode
     components::Vector{C}
     dimensions::Vector{D}
 end
@@ -28,7 +28,7 @@ end
 Flux.@functor ProductNode
 Flux.trainable(m::ProductNode) = (m.components,)
 
-ProductNode(c::AbstractModelNode, d::Union{UnitRange{Int}, Tuple{Vararg{T}}, T}) where {T<:Symbol} = ProductNode([c], [d]) # best to get rid of this in future
+ProductNode(c::AbstractModelNode, d::Union{UnitRange{Int}, Vector{T}, T}) where {T<:Symbol} = ProductNode([c], [d]) # best to get rid of this in future
 
 ####
 #	  Functions for calculating the likelihood
@@ -56,7 +56,7 @@ HierarchicalUtils.nodeshow(io::IO, m::ProductNode) = (print(io, "ProductNode "),
 HierarchicalUtils.printchildren(m::ProductNode) = m.components
 
 _print(io, x::Vector{T}) where {T<:Symbol} = print(io, "$(Tuple(x))")
-_print(io, x::Vector{T}) where {T<:Tuple{Vararg{<:Symbol}}} = foreach(d->print(io, "$(d) "), x)
+_print(io, x::Vector{T}) where {T<:Vector{<:Symbol}} = foreach(d->print(io, "$(d) "), x)
 
 
 ####

@@ -142,7 +142,7 @@ function commands()
     s = ArgParseSettings()
     @add_arg_table s begin
         ("--n"; arg_type = Int; default=1);
-        ("--m"; arg_type = Int; default=7);
+        ("--m"; arg_type = Int; default=1);
     end
     parse_args(s)
 end
@@ -152,20 +152,17 @@ function estimate(config::NamedTuple)
 	data = read("$(dirdata)/$(dataset).json", String)
 	data = JSON3.read(data)
     x, y = data.x, data.y
-    # JSON3.pretty(data.x)
 
     s = JsonGrinder.schema(x)
     e = suggestextractor(s)
-    # e = suggestextractor(s, (; scalar_extractors = default_scalar_extractor()))
     x = Mill.catobs(e.(x))
     x_trn, x_val, x_tst, y_trn, y_val, y_tst = split(x, y, seed_split)
 
     Random.seed!(seed_init)
 
     m = reflectinmodel(x_trn[1], length(unique(y)); hete_nl=pl, hete_ns=ps)
-    # printtree(m, htrunc=25, vtrunc=25)
 
-    record = gd!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, Adam(0.1), nepoc, bsize, supervision)
+    record = gd!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, Adam(), nepoc, bsize, supervision)
 
     if msave == true
         ntuple2dict(merge(config, evaluate(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst), record, (; m)))

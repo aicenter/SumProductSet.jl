@@ -11,15 +11,16 @@ mutable struct ModelSettings
     data_type::Type{<:Real}
 end
 
-decrease_hete_ns!(m::ModelSettings) = (m.hete_ns = m.hete_ns[2:end]; return m)
-
+function decrease_hete_ns!(m::ModelSettings)
+    m.hete_ns = m.hete_ns[2:end]
+    return m
+end
 """
     reflectinmodel(x, n; kwargs...)
 
 Build mixture model of HMILL data.
 x - a signle HMILL sample.
-n - a number of mixture components in the root node.
-f_{type} - leaf distribution for {type} variable should be function d -> distribution(d), where d is dimension of the data leaf.
+root_ns - a number of mixture components in the root node.
 
 # Examples
 
@@ -42,16 +43,16 @@ function reflectinmodel(
         data_type::Type{<:Real} = Float32
     )
 
-    settings = ModelSettings(root_ns, homo_ns, hete_nl, vcat(root_ns, repeat([hete_ns], 99)), dist_cont, dist_disc, dist_gram, dist_card, data_type)
+    settings = ModelSettings(root_ns, homo_ns, hete_nl, vcat(root_ns, repeat([hete_ns], 9999)), dist_cont, dist_disc, dist_gram, dist_card, data_type)
 
     _reflectinmodel(x, settings)
 end
 
 function _reflectinmodel(x::Mill.ProductNode, settings::ModelSettings)
     if settings.hete_nl == 1
-        _productmodel(x,                            settings.hete_ns[1], decrease_hete_ns!(settings))
+        _productmodel(x,                                     settings.hete_ns[1], decrease_hete_ns!(settings))
     else
-        _productmodel(x, keys(x), settings.hete_nl, settings.hete_ns[1], decrease_hete_ns!(settings))
+        _productmodel(x, collect(keys(x)), settings.hete_nl, settings.hete_ns[1], decrease_hete_ns!(settings))
     end
 end
 function _reflectinmodel(x::Mill.BagNode,     settings::ModelSettings)
@@ -61,7 +62,7 @@ function _reflectinmodel(x::Mill.BagNode,     settings::ModelSettings)
         SumNode(map(_->SetNode(_reflectinmodel(x.data, settings), settings.dist_card()), 1:settings.homo_ns))
     end
 end
-_reflectinmodel(x::Mill.ArrayNode, settings) = _reflectinmodel(x.data, settings)
+_reflectinmodel(x::Mill.ArrayNode, settings::ModelSettings) = _reflectinmodel(x.data, settings)
 
 _reflectinmodel(x::OneHotArray,           settings)                     = settings.dist_disc(size(x, 1))
 _reflectinmodel(x::MaybeHotArray,         settings)                     = settings.dist_disc(size(x, 1))
@@ -76,7 +77,7 @@ function _productmodel(x, n::Int, settings::ModelSettings)
     c = map(_->ProductNode(mapreduce(k->_reflectinmodel(x.data[k], settings), vcat, k), reduce(vcat, k)), 1:n)
     n == 1 ? first(c) : SumNode(c)
 end
-function _productmodel(x, scope::NTuple{N, Symbol}, l::Int, n::Int, settings::ModelSettings) where {N}
+function _productmodel(x, scope::Vector{Symbol}, l::Int, n::Int, settings::ModelSettings) where N
     d = length(scope)
     k = first(keys(x.data))
     l == 1 && return _productmodel(x, n, settings)
