@@ -30,8 +30,8 @@ logpdf(m::Categorical, x::Union{OneHotArray, MaybeHotArray}) = _logpdf(m, x)
 #   Functions for generating random samples
 ####
 
-Base.rand(m::Categorical) = sample(Weights(softmax(m.logp)))
-Base.rand(m::Categorical, ns::Int...) = sample(1:length(m.logp), Weights(softmax(m.logp)), ns)
+Base.rand(m::Categorical, n::Int) = (r=1:length(m.logp); Flux.onehotbatch(sample(r, Weights(softmax(m.logp)), n), r) |> Mill.ArrayNode)
+Base.rand(m::Categorical) = rand(m, 1)
 
 ####
 #   Utilities

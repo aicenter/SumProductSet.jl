@@ -25,13 +25,13 @@ import Mill
 
 
 function logjnt(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode}, y)
-    l = mapreduce(c->logpdf(c, x), vcat, m.components) .+ logsoftmax(m.weights)
+    l = logsoftmax(mapreduce(c->logpdf(c, x), vcat, m.components) .+ logsoftmax(m.weights))
     l[CartesianIndex.(y, 1:length(y))]
 end
 
 
 Base.length(x::Mill.ProductNode) = Mill.nobs(x)
-predict(m, x) = mapslices(argmax, SumProductSet.logjnt(m, x), dims=1)[:]
+predict(m, x) = mapslices(argmax, softmax(SumProductSet.logjnt(m, x)), dims=1)[:]
 
 
 function evaluate(m, x_trn::Ar, x_val::Ar, x_tst::Ar, y_trn::Ai, y_val::Ai, y_tst::Ai) where {Ar<:Mill.AbstractMillNode,Ai<:AbstractArray{<:Int,1}}
@@ -142,7 +142,7 @@ function commands()
     s = ArgParseSettings()
     @add_arg_table s begin
         ("--n"; arg_type = Int; default=1);
-        ("--m"; arg_type = Int; default=1);
+        ("--m"; arg_type = Int; default=5);
     end
     parse_args(s)
 end
@@ -158,11 +158,9 @@ function estimate(config::NamedTuple)
     x = Mill.catobs(e.(x))
     x_trn, x_val, x_tst, y_trn, y_val, y_tst = split(x, y, seed_split)
 
-    Random.seed!(seed_init)
+    m = reflectinmodel(x_trn[1], length(unique(y)); hete_nl=pl, hete_ns=ps, seed=seed_init)
 
-    m = reflectinmodel(x_trn[1], length(unique(y)); hete_nl=pl, hete_ns=ps)
-
-    record = gd!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, Adam(), nepoc, bsize, supervision)
+    record = gd!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, Adam(0.01), nepoc, bsize, supervision)
 
     if msave == true
         ntuple2dict(merge(config, evaluate(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst), record, (; m)))
@@ -176,8 +174,8 @@ function slurm()
     @unpack n, m = commands()
     dataset = datasets[m]
     pl, ps, nepoc, bsize, supervision, seed_split, seed_init = collect(Iterators.product(
-        [2, 3],
-        [2, 3],
+        [1, 2, 3],
+        [1, 2, 3],
         [400],
         [10, 20, 30],
         [1f-0],

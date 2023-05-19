@@ -41,11 +41,8 @@ logpdf(m::ProductNode, x::Mill.ProductNode) = mapreduce((c, d)->logpdf(c, x[d]),
 #	  Functions for generating random samples
 ####
 
-# Base.rand(m::ProductNode) = rand(m, 1)
-# Base.rand(m::ProductNode, n::Int) = Mill.ProductNode(map((k, c)->k=>rand(c, n) |> _reshape, m.components, m.dimensions))
-
-# _reshape(x::Vector{Int}) = reshape(x, 1, :)
-# _reshape(x) = x
+Base.rand(m::ProductNode, n::Int) = map((c, k)->k=>rand(c, n), m.components, m.dimensions) |> NamedTuple |> Mill.ProductNode
+Base.rand(m::ProductNode) = rand(m, 1)
 
 ####
 #	  Functions for making the library compatible with HierarchicalUtils

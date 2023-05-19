@@ -40,10 +40,13 @@ function reflectinmodel(
         dist_disc = d->Categorical(d),
         dist_gram = d->Geometric(d),
         dist_card = ()->Poisson(),
-        data_type::Type{<:Real} = Float32
+        data_type::Type{<:Real} = Float32,
+        seed::Int=1
     )
 
     settings = ModelSettings(root_ns, homo_ns, hete_nl, vcat(root_ns, repeat([hete_ns], 9999)), dist_cont, dist_disc, dist_gram, dist_card, data_type)
+
+    Random.seed!(seed)
 
     _reflectinmodel(x, settings)
 end
@@ -89,5 +92,5 @@ function _productmodel(x, scope::Vector{Symbol}, l::Int, n::Int, settings::Model
         comps_r = _productmodel(x[scope_r], scope_r, l-1, n, settings)
         ProductNode([comps_l, comps_r], [scope_l, scope_r])
     end
-    SumNode(c)
+    n == 1 ? first(c) : SumNode(c)
 end

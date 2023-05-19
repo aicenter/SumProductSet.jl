@@ -11,7 +11,7 @@ Flux.@functor Poisson
 
 Poisson(logλ::Real) = Poisson([logλ])
 Poisson(logλ::Integer) = Poisson(Float32(logλ))
-Poisson() = Poisson(log(rand(2:5)))
+Poisson() = Poisson(log(rand(2:10)))
 
 ####
 #   Functions for calculating the likelihood

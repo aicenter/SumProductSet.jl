@@ -47,11 +47,8 @@ logpdf(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode}) = logsumexp(
 _samplelatent(m::SumNode, n::Int) = sample(1:length(m.weights), Weights(softmax(m.weights)), n)
 _samplelatent(m::SumNode) = _samplelatent(m, 1)[]
 
-Base.rand(m::SumNode,                    n::Int) = rand.(m.components[_samplelatent(m, n)])... |> hcat
-Base.rand(m::SumNode{<:Real, <:SetNode}, n::Int) = rand.(m.components[_samplelatent(m, n)])... |> Mill.catobs
-
-Base.rand(m::SumNode)                    = rand(m, 1)
-Base.rand(m::SumNode{<:Real, <:SetNode}) = rand(m.components[_samplelatent(m)], 1)
+Base.rand(m::SumNode, n::Int) = Mill.catobs(rand.(m.components[_samplelatent(m, n)])...)
+Base.rand(m::SumNode) = rand(m, 1)
 
 function randwithlabel(m::SumNode, n::Int)
     i = _samplelatent(m, n)

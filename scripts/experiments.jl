@@ -14,8 +14,8 @@ using SumProductSet
 # (name="cora",            ndata=2708,  nclass=7 ) # 3
 # (name="citeseer",        ndata=3312,  nclass=6 ) # 4
 # (name="webkp",           ndata=877,   nclass=5 ) # 5
-# (name="world",           ndata=239,   nclass=7 ) # 6
-# (name="craft_beer",      ndata=558,   nclass=51) # 7
+# (name="world",           ndata=239,   nclass=7 ) # 6 # cannot be sampled (ngrams)
+# (name="craft_beer",      ndata=558,   nclass=51) # 7 # cannot be sampled (ngrams)
 # (name="chess",           ndata=295,   nclass=3 ) # 8
 # (name="uw_cse",          ndata=278,   nclass=4 ) # 9
 # (name="hepatitis",       ndata=500,   nclass=2 ) # 10
@@ -29,14 +29,9 @@ s = JsonGrinder.schema(x)
 e = suggestextractor(s)
 x = Mill.catobs(e.(x))
 
-m = SumProductSet.reflectinmodel(x[1], length(unique(y)); hete_nl=2, hete_ns=2)
+m = SumProductSet.reflectinmodel(x[1], length(unique(y)); hete_nl=1, hete_ns=1)
 
-# printtree(s, htrunc=25, vtrunc=25)
-# printtree(x, htrunc=25, vtrunc=25)
-printtree(m, htrunc=25, vtrunc=25)
+z = rand(m, 10)
 
-logpdf(m, x)
-
-ps = Flux.params(m)
-gs = gradient(()->-mean(logpdf(m, x)), ps)
-foreach(p->display(gs[p]), ps)
+printtree(x, htrunc=25, vtrunc=25)
+printtree(z, htrunc=25, vtrunc=25)

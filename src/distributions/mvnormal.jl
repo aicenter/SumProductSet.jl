@@ -36,8 +36,8 @@ logpdf(m::MvNormal{T, 1}, x::Array{Maybe{T}, 1}) where {T<:Real} = logpdf(m, hca
 #   Functions for generating random samples
 ####
 
-Base.rand(m::MvNormal{T, 2}, n::Int) where {T<:Real} =   inv(m.A)  * (randn(T, length(m.b), n) .- m.b)
-Base.rand(m::MvNormal{T, 1}, n::Int) where {T<:Real} = (1 ./ m.A) .* (randn(T, length(m.b), n) .- m.b)
+Base.rand(m::MvNormal{T, 2}, n::Int) where {T<:Real} =   inv(m.A)  * (randn(T, length(m.b), n) .- m.b) |> Mill.ArrayNode
+Base.rand(m::MvNormal{T, 1}, n::Int) where {T<:Real} = (1 ./ m.A) .* (randn(T, length(m.b), n) .- m.b) |> Mill.ArrayNode
 Base.rand(m::MvNormal) = rand(m, 1)
 
 ####

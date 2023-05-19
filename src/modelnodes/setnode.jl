@@ -42,25 +42,19 @@ end
 #   Functions for generating random samples
 ####
 
-function Base.rand(m::SetNode)
-    card = rand(m.cardinality)
-    x = rand(m.feature, card)
-    if typeof(x) <: Matrix{<:Real}
-        Mill.BagNode(x, [1:card])
-    elseif typeof(x) <: Vector{<:Real}
-        Mill.BagNode(hcat(x), [1:card])
-    elseif typeof(x) <: Mill.AbstractMillNode
-        Mill.BagNode(x, [1:card])
-    else
-        @error "sampled unknown datatype"
-    end
-end
-
 function Base.rand(m::SetNode, n::Int)
     if n == 0
         Mill.BagNode(missing, [1:0])
     else
         Mill.catobs(map(_->rand(m), 1:n))
+    end
+end
+function Base.rand(m::SetNode)
+    n = rand(m.cardinality)
+    if n == 0
+        Mill.BagNode(missing, [1:0])
+    else
+        Mill.BagNode(rand(m.feature, n), [1:n])
     end
 end
 
