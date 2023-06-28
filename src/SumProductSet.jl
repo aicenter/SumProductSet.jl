@@ -26,7 +26,7 @@ include("leaves/vae.jl")
 include("reflectinmodel.jl")
 include("loss.jl")
 
-export Poisson, Categorical, MvNormal, MvNormalParams
+export ZIPoisson, Poisson, Geometric, Categorical, MvNormal, MvNormalParams
 export logpdf, logjnt
 export SumNode, ProductNode, SetNode
 export rand, randwithlabel
