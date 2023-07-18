@@ -35,11 +35,11 @@ Flux.@functor SetNode
 
 function logpdf(m::SetNode, x::Mill.BagNode)
     l = logpdf(m.feature, x.data)
-    mapreduce(b->logpdf(m.cardinality, length(b)) .+ sum(l[b]; dims=1) .+ logfactorial(length(b)), hcat, x.bags)
+    mapreduce(b->logpdf(m.cardinality, length(b)) .+ sum(l[b]; dims=1) .+ logfactorial(length(b)), hcat, x.bags.bags)
 end
 
 ####
-#   Functions for generating random samples
+    #   Functions for generating random samples
 ####
 
 function Base.rand(m::SetNode, n::Int)
@@ -50,7 +50,7 @@ function Base.rand(m::SetNode, n::Int)
     end
 end
 function Base.rand(m::SetNode)
-    n = rand(m.cardinality)
+    n = only(rand(m.cardinality))
     if n == 0
         Mill.BagNode(missing, [1:0])
     else
