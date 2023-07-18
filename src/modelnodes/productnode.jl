@@ -1,5 +1,5 @@
 """
-    ProductNode{T<:Union{Tuple, NamedTuple}, U<:NTuple{N, UnitRange{Int}} where N} <: AbstractModelNode
+ProductNode{C<:AbstractModelNode, D<:Union{UnitRange{Int}, Vector{T}, T} where {T<:Symbol}} <: AbstractModelNode
 
 Implement a product of independent random variables as `AbstractModelNode`.
 
@@ -11,13 +11,12 @@ ProductNode  # 2 obs, 16 bytes
   ├── a: ArrayNode(2×2 Array with Float64 elements)  # 2 obs, 80 bytes
   ╰── b: ArrayNode(2×2 Array with Float64 elements)  # 2 obs, 80 bytes
 julia> m = ProductNode(a=MvNormal(2), b=MvNormal(2))
-ProductNode
-  ├── a: MvNormal
-  ╰── b: MvNormal
+ProductNode (:a, :b)
+  ├── MvNormal
+  ╰── MvNormal
 julia> logpdf(m, x)
-2-element Vector{Float64}:
- -36.468016427033014
- -51.62330239036811
+1×2 Matrix{Float64}:
+ -36.468  -51.6233
 ```
 """
 struct ProductNode{C<:AbstractModelNode, D<:Union{UnitRange{Int}, Vector{T}, T} where {T<:Symbol}} <: AbstractModelNode
@@ -29,7 +28,8 @@ Flux.@functor ProductNode
 Flux.trainable(m::ProductNode) = (m.components,)
 
 ProductNode(c::AbstractModelNode, d::Union{UnitRange{Int}, Vector{T}, T}) where {T<:Symbol} = ProductNode([c], [d]) # best to get rid of this in future
-
+ProductNode(;ms...) = ProductNode(NamedTuple(ms))
+ProductNode(ms::NamedTuple) = ProductNode(collect(values(ms)), collect(keys(ms)))
 ####
 #	  Functions for calculating the likelihood
 ####
@@ -41,7 +41,10 @@ logpdf(m::ProductNode, x::Mill.ProductNode) = mapreduce((c, d)->logpdf(c, x[d]),
 #	  Functions for generating random samples
 ####
 
-Base.rand(m::ProductNode, n::Int) = map((c, k)->k=>rand(c, n), m.components, m.dimensions) |> NamedTuple |> Mill.ProductNode
+Base.rand(m::ProductNode{C, D}, n::Int) where {C<:AbstractModelNode, D<:Union{Vector{T}, T} where {T<:Symbol}} = 
+  map((c, k)->k=>rand(c, n), m.components, m.dimensions) |> NamedTuple |> Mill.ProductNode
+Base.rand(m::ProductNode{C, D}, n::Int) where {C<:AbstractModelNode, D<:UnitRange{Int}} = 
+  mapreduce(c->rand(c, n), vcat, m.components)
 Base.rand(m::ProductNode) = rand(m, 1)
 
 ####
@@ -52,6 +55,7 @@ HierarchicalUtils.NodeType(::Type{<:ProductNode}) = InnerNode()
 HierarchicalUtils.nodeshow(io::IO, m::ProductNode) = (print(io, "ProductNode "), _print(io, m.dimensions))
 HierarchicalUtils.printchildren(m::ProductNode) = m.components
 
+_print(io, ::Vector{T}) where {T<:UnitRange{Int}} = print(io, "")
 _print(io, x::Vector{T}) where {T<:Symbol} = print(io, "$(Tuple(x))")
 _print(io, x::Vector{T}) where {T<:Vector{<:Symbol}} = foreach(d->print(io, "$(d) "), x)
 
