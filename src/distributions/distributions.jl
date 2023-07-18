@@ -1,5 +1,5 @@
 
-abstract type Distribution{T} <: AbstractModelNode end
+abstract type Distribution <: AbstractModelNode end
 
 include("poisson.jl")
 include("mvnormal.jl")

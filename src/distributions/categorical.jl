@@ -1,5 +1,5 @@
 
-mutable struct Categorical{T} <: Distribution{T}
+struct Categorical{T} <: Distribution
     logp::Array{T, 1}
 end
 

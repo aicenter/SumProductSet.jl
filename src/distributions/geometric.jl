@@ -1,5 +1,5 @@
 
-mutable struct Geometric{T} <: Distribution{T}
+mutable struct Geometric{T} <: Distribution
     logitp::Array{T, 1}
 end
 

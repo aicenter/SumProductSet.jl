@@ -1,5 +1,5 @@
 
-mutable struct MvNormal{T, N} <: Distribution{T}
+struct MvNormal{T, N} <: Distribution
     b::Array{T, 1}
     A::Array{T, N}
     r::T
