@@ -39,34 +39,31 @@ SumNode
 ```
 
 """
-function spn(d::Int, l::Int, n::Int)
-    n == 1 && l == 1 && return MvNormal(d)
-    l == 1 && return SumNode(map(_->MvNormal(d), 1:n))
-
-    n == 1 && d == 1 && return MvNormal(d)
-    d == 1 && return SumNode(map(_->MvNormal(d), 1:n))
+function spn(d::Int, l::Int, n::Int; leaf::Function=d->MvNormal(d))
+    (l == 1 || d == 1) && n == 1 && return leaf(d)
+    (l == 1 || d == 1) && return SumNode(map(_->leaf(d), 1:n))
 
     r = ceil(Int, d / 2)
     comp_sum = map(1:n) do _
-        comp_prod = [spn(r, l-1, n), spn(d-r, l-1, n)]
-        ProductNode(comp_prod...)
+        prod_comp = [spn(r, l-1, n), spn(d-r, l-1, n)]
+        prod_dims = [1:r, r+1:d]
+        ProductNode(prod_comp, prod_dims)
     end
     length(comp_sum) == 1 ? first(comp_sum) : SumNode(comp_sum)
 end
 
-function spn(d::Int, n::Vector{Int})
-    length(n) == 1 && n[1] == 1 && return MvNormal(d)
-    length(n) == 1 && return SumNode(map(_->MvNormal(d), 1:n[1]))
+function spn(d::Int, n::Vector{Int}; leaf::Function=d->MvNormal(d))
+    (length(n) == 1 || d == 1) && first(n) == 1 && return leaf(d)
+    (length(n) == 1 || d == 1) && return SumNode(map(_->leaf(d), 1:first(n)))
 
-    d == 1 && n[1] == 1 && return MvNormal(d)
-    d == 1 && return SumNode(map(_->MvNormal(d), 1:n[1]))
+    r = ceil(Int, d / 2)
+    sum_comp = map(1:first(n)) do _
+        prod_comp = [spn(r, n[2:end]), spn(d-r, n[2:end])]
+        prod_dims = [1:r, r+1:d]
 
-    comp_sum = map(1:n[1]) do _
-        r = ceil(Int, d / 2)
-        comp_prod = [spn(r, n[2:end]), spn(d-r, n[2:end])]
-        length(comp_prod) == 1 ? first(comp_prod) : ProductNode(comp_prod...)
+        length(prod_comp) == 1 ? first(prod_comp) : ProductNode(prod_comp, prod_dims)
     end
-    length(comp_sum) == 1 ? first(comp_sum) : SumNode(comp_sum)
+    length(sum_comp) == 1 ? first(sum_comp) : SumNode(sum_comp)
 end
 
 function setmixture(nb::Int, ni::Int, d::Int; cdist::Function=()->Poisson(),
