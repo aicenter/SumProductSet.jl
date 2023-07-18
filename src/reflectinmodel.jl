@@ -44,11 +44,11 @@ function reflectinmodel(
         seed::Int=1
     )
 
-    settings = ModelSettings(root_ns, homo_ns, hete_nl, vcat(root_ns, repeat([hete_ns], 9999)), dist_cont, dist_disc, dist_gram, dist_card, data_type)
+    settings = ModelSettings(root_ns, homo_ns, hete_nl, repeat([hete_ns], 9999), dist_cont, dist_disc, dist_gram, dist_card, data_type)
 
     Random.seed!(seed)
 
-    _reflectinmodel(x, settings)
+    root_ns > 1 ? SumNode(map(_->_reflectinmodel(x, settings), 1:root_ns)) : _reflectinmodel(x, settings) 
 end
 
 function _reflectinmodel(x::Mill.ProductNode, settings::ModelSettings)
