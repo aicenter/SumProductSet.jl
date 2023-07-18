@@ -1,35 +1,32 @@
 
-mutable struct Poisson{T} <: Distribution{T}
-    logλ::Array{T, 1}
-    function Poisson(logλ::Array{T, 1}) where T
-        @assert length(logλ) == 1
-        new{T}(logλ)
-    end
+struct Poisson{T <: AbstractFloat} <: Distribution
+    lograte::Vector{T}
 end
 
 Flux.@functor Poisson
 
-Poisson(logλ::Real) = Poisson([logλ])
-Poisson(logλ::Integer) = Poisson(Float32(logλ))
-Poisson() = Poisson(log(rand(2:10)))
+Poisson(lograte::AbstractFloat) = Poisson([lograte])
+Poisson(n::Int) = Poisson(Float64.(log.(rand(2:10, n)))) # pois_rand does not work with Float64
+Poisson() = Poisson(1)
 
 ####
 #   Functions for calculating the likelihood
 ####
-
-_logpdf(logλ::Real, x) = x .* logλ .- exp(logλ) .- logfactorial.(x)
-
-logpdf(m::Poisson, x::Union{Real, Vector{<:Real}}) = mapreduce(logλ -> _logpdf(logλ, x), +, m.logλ)
+_logpdf(lograte, x::Union{T, Matrix{T}} where {T<:Real}) = x .* lograte .- exp.(lograte) .- logfactorial.(x)
+logpdf(m::Poisson, x::Matrix{<:Real}) = sum(_logpdf(m.lograte, x), dims=1)
+logpdf(m::Poisson, x::Vector{<:Real}) = sum(_logpdf(m.lograte, hcat(x...)), dims=1)
+logpdf(m::Poisson, x::Real) = hcat(_logpdf(m.lograte, x))  # for consistency
 
 ####
 #   Functions for generating random samples
 ####
 
-Base.rand(m::Poisson) = pois_rand(exp(m.logλ[1]))
-Base.rand(m::Poisson, n::Int) = map(_->rand(m), 1:n)
+# Base.rand(m::Poisson, n::Int) = mapreduce(logλ -> map(_->pois_rand(exp(logλ)), 1:n)', vcat, m.logλ)
+Base.rand(m::Poisson, n::Int) = Mill.ArrayNode([pois_rand(exp(logr)) for logr in m.lograte, _ in 1:n])
+Base.rand(m::Poisson) = rand(m, 1)
 
 ####
 #   Utilities
 ####
 
-Base.length(m::Poisson) = length(m.logλ)
+Base.length(m::Poisson) = length(m.lograte)
