@@ -10,13 +10,12 @@ using OneHotArrays
 using SparseArrays
 using Random
 using Mill
+using SpecialFunctions
 
 const Maybe{T} = Union{T, Missing}
 const MaybeHotArray{T} = Union{MaybeHotVector{T}, MaybeHotMatrix{T}}
 const Code = Union{AbstractVector{<:Integer}, Base.CodeUnits}
 const Sequence = Union{AbstractString, Code}
-
-logfactorial(x::Real) = sum(log.(collect(2:x)))
 
 include("modelnodes/modelnode.jl")
 include("distributions/distributions.jl")
