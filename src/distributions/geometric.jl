@@ -5,7 +5,7 @@ end
 
 Flux.@functor Geometric
 
-Geometric(n::Int; dtype::Type{<:Real}=Float32) = Geometric(zeros(dtype, n))
+Geometric(n::Int; dtype::Type{<:Real}=Float32) = Geometric(dtype(0.01)*randn(dtype, n))
 
 ####
 #   Functions for calculating the likelihood
@@ -17,13 +17,21 @@ Geometric(n::Int; dtype::Type{<:Real}=Float32) = Geometric(zeros(dtype, n))
 #     SparseMatrixCSC(k).* log.(1 .- p) .+ log.(p)
 # end
 
-_logpdf(m::Geometric, k) = -SparseMatrixCSC(k).*log1p.(exp.(m.logitp)) .- log1p.(exp.(-m.logitp))
+_logpdf(m::Geometric, k) = _logpdf(m, SparseMatrixCSC(k))
+_logpdf(m::Geometric, k::SparseMatrixCSC) = k .*logsigmoid.(-m.logitp) .+ logsigmoid.(m.logitp)
 
 logpdf(m::Geometric,     x::NGramMatrix{T})         where {T<:Sequence}            = mean(_logpdf(m, x); dims=1)
 logpdf(m::Geometric{Tm}, x::NGramMatrix{Maybe{Tx}}) where {Tm<:Real, Tx<:Sequence} = mean(coalesce.(_logpdf(m, x), Tm(0e0)); dims=1)
 
 ####
+    #   Functions for generating random samples
+####
+
+Base.rand(m::Geometric, n::Int) = floor.(Int, log.(rand(length(m), n)) ./ logsigmoid.(-m.logitp))
+Base.rand(m::Geometric) = rand(m, 1)
+
+####
 #   Utilities
 ####
 
-Base.length(m::Geometric) = 1
+Base.length(m::Geometric) = length(m.logitp)
