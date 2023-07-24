@@ -30,12 +30,14 @@ Flux.trainable(m::ProductNode) = (m.components,)
 ProductNode(c::AbstractModelNode, d::Union{UnitRange{Int}, Vector{T}, T}) where {T<:Symbol} = ProductNode([c], [d]) # best to get rid of this in future
 ProductNode(;ms...) = ProductNode(NamedTuple(ms))
 ProductNode(ms::NamedTuple) = ProductNode(collect(values(ms)), collect(keys(ms)))
+
 ####
 #	  Functions for calculating the likelihood
 ####
 
 logpdf(m::ProductNode, x::AbstractMatrix)   = mapreduce((c, d)->logpdf(c, x[d, :]), +, m.components, m.dimensions)
 logpdf(m::ProductNode, x::Mill.ProductNode) = mapreduce((c, d)->logpdf(c, x[d]),    +, m.components, m.dimensions)
+logpdf(m::ProductNode, x::Mill.ArrayNode)   = logpdf(m, x.data)
 
 ####
 #	  Functions for generating random samples
@@ -44,7 +46,10 @@ logpdf(m::ProductNode, x::Mill.ProductNode) = mapreduce((c, d)->logpdf(c, x[d]),
 Base.rand(m::ProductNode{C, D}, n::Int) where {C<:AbstractModelNode, D<:Union{Vector{T}, T} where {T<:Symbol}} = 
   map((c, k)->k=>rand(c, n), m.components, m.dimensions) |> NamedTuple |> Mill.ProductNode
 Base.rand(m::ProductNode{C, D}, n::Int) where {C<:AbstractModelNode, D<:UnitRange{Int}} = 
-  mapreduce(c->rand(c, n), vcat, m.components)
+  Mill.ArrayNode(reduce(vcat, map(c->rand(c, n).data, m.components)))
+  # mapreduce(c->rand(c, n), vcat, m.components)
+  # reduce(sparse_vcat, map(c->rand(c, n), m.components))
+
 Base.rand(m::ProductNode) = rand(m, 1)
 
 ####
