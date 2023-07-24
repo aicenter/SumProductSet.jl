@@ -9,7 +9,7 @@ Flux.@functor MvNormal
 
 MvNormal{T, N}(b::Array{T, 1}, A::Array{T, N}) where {T, N} = MvNormal(b, A, zero(T))
 
-function MvNormal(d::Integer; dtype::Type{<:Real}=Float64, stype::Symbol=:full, minit::Symbol=:uniform, sinit::Symbol=:unit, r::Real=0.)
+function MvNormal(d::Integer; dtype::Type{<:Real}=Float32, stype::Symbol=:full, minit::Symbol=:uniform, sinit::Symbol=:unit, r::Real=0.)
     m = select_m(minit, dtype, d)
     s = select_s(sinit, dtype, d)
     stype == :full   && return MvNormalParams(m, diagm(s), dtype(r))
