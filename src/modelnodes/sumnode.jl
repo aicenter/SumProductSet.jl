@@ -31,13 +31,13 @@ end
 
 Flux.@functor SumNode
 
-SumNode(c::Vector; dtype::Type{<:Real}=Float64) = SumNode(c, ones(dtype, length(c)))
+SumNode(c::Vector; dtype::Type{<:Real}=Float32) = SumNode(c, ones(dtype, length(c)))
 
 ####
 #   Functions for calculating the likelihood
 ####
 
-logjnt(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode}) = mapreduce(c->logpdf(c, x), vcat, m.components) .+ logsoftmax(m.weights)
+logjnt(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode}) = mapreduce(c->logpdf(c, x), vcat, m.components) .+ hcat(logsoftmax(m.weights))
 logpdf(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode}) = logsumexp(logjnt(m, x), dims=1)
 
 ####
