@@ -12,10 +12,11 @@ Poisson() = Poisson(1)
 ####
 #   Functions for calculating the likelihood
 ####
-_logpdf(lograte, x::Union{T, Matrix{T}} where {T<:Real}) = x .* lograte .- exp.(lograte) .- logfactorial.(x)
+_logpdf(lograte, x) = x .* lograte .- exp.(lograte) .- _logfactorial.(x)
 logpdf(m::Poisson, x::Matrix{<:Real}) = sum(_logpdf(m.lograte, x), dims=1)
 logpdf(m::Poisson, x::Vector{<:Real}) = sum(_logpdf(m.lograte, hcat(x...)), dims=1)
 logpdf(m::Poisson, x::Real) = hcat(_logpdf(m.lograte, x))  # for consistency
+logpdf(m::Poisson, x::SparseMatrixCSC) = sum(_logpdf(m.lograte, x), dims=1)
 
 ####
 #   Functions for generating random samples

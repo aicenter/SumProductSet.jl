@@ -29,9 +29,9 @@ function _logpdf(m::ZIPoisson, x)
     (x.>0).*(logsigmoid.(-m.logitp) .+ log_poisson) + (x.==0).*log.(sigmoid.(m.logitp) .+ sigmoid.(-m.logitp) .* exp.(log_poisson))
 end
 
-logpdf(m::ZIPoisson, x::SparseMatrixCSC) = mean(_logpdf(m, x), dims=1)
-logpdf(m::ZIPoisson, x::NGramMatrix{T}) where {T<:Sequence} = mean(_logpdf(m, SparseMatrixCSC(x)), dims=1)
-logpdf(m::ZIPoisson{Tm}, x::NGramMatrix{Maybe{Tx}}) where {Tm<:Real, Tx<:Sequence} = mean(coalesce.(_logpdf(m, SparseMatrixCSC(x)), Tm(0e0)); dims=1)
+logpdf(m::ZIPoisson, x::SparseMatrixCSC) = sum(_logpdf(m, x), dims=1)
+logpdf(m::ZIPoisson, x::NGramMatrix{T}) where {T<:Sequence} = sum(_logpdf(m, SparseMatrixCSC(x)), dims=1)
+logpdf(m::ZIPoisson{Tm}, x::NGramMatrix{Maybe{Tx}}) where {Tm<:Real, Tx<:Sequence} = sum(coalesce.(_logpdf(m, SparseMatrixCSC(x)), Tm(0e0)); dims=1)
 
 ####
 #   Functions for generating random samples
