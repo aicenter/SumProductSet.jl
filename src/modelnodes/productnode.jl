@@ -31,6 +31,17 @@ ProductNode(c::AbstractModelNode, d::Union{UnitRange{Int}, Vector{T}, T}) where 
 ProductNode(;ms...) = ProductNode(NamedTuple(ms))
 ProductNode(ms::NamedTuple) = ProductNode(collect(values(ms)), collect(keys(ms)))
 
+function ProductNode(components::Vector{<:AbstractModelNode})
+  dimensions = Vector{UnitRange{Int}}(undef, length(components))
+  start = 1
+  for (i, c) in enumerate(components)
+      l = length(c)
+      dimensions[i] = start:start + l - 1
+      start += l
+  end
+  ProductNode(components, collect(dimensions))
+end
+
 ####
 #	  Functions for calculating the likelihood
 ####
@@ -68,3 +79,5 @@ _print(io, x::Vector{T}) where {T<:Vector{<:Symbol}} = foreach(d->print(io, "$(d
 ####
 #	  Utilities
 ####
+
+Base.length(m::ProductNode) = sum(length, m.components)
