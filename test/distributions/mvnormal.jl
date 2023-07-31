@@ -8,8 +8,8 @@ const grid = Iterators.product(
     [0., 1.])
 
 @testset "MvNormal --- constructors" begin
-    for (d, dtype, μinit, Σinit, Σtype, r) in grid
-        ps = (; dtype, μinit, Σinit, Σtype, r)
+    for (d, dtype, minit, sinit, stype, r) in grid
+        ps = (; dtype, minit, sinit, stype, r)
         # @show d, ps
         m = SumProductSet.MvNormal(d; ps...)
         @test !isnothing(m)
@@ -19,8 +19,8 @@ end
 
 @testset "MvNormal --- initialization and logpdf forward" begin
     n = 20
-    for (d, dtype, μinit, Σinit, Σtype, r) in grid
-        ps = (; dtype, μinit, Σinit, Σtype, r)
+    for (d, dtype, minit, sinit, stype, r) in grid
+        ps = (; dtype, minit, sinit, stype, r)
         m = SumProductSet.MvNormal(d; ps...)
 
         x1 = randn(dtype, d, n)
@@ -34,13 +34,14 @@ end
 
 @testset "MvNormal --- rand sampling" begin
     n = 20
-    for (d, dtype, μinit, Σinit, Σtype, r) in grid
-        ps = (; dtype, μinit, Σinit, Σtype, r)
+    for (d, dtype, minit, sinit, stype, r) in grid
+        ps = (; dtype, minit, sinit, stype, r)
         m = SumProductSet.MvNormal(d; ps...)
 
         @test size(rand(m)) == (d, 1)
         @test size(rand(m, n)) == (d, n)
-        @test eltype(rand(m, n)) == dtype
+        @test typeof(rand(m, n)) <: Mill.ArrayNode
+        @test eltype(rand(m, n).data) == dtype
     end
 end
 
@@ -53,13 +54,13 @@ end
     x1 = rand(m1, n) 
     x2 = rand(m2, n)
 
-    @test Distributions.logpdf(m1, x1) ≈ SumProductSet.logpdf(m2, x1)
-    @test Distributions.logpdf(m1, x2) ≈ SumProductSet.logpdf(m2, x2)
+    @test Distributions.logpdf(m1, x1)[:] ≈ SumProductSet.logpdf(m2, x1)[:]
+    @test Distributions.logpdf(m1, x2.data)[:] ≈ SumProductSet.logpdf(m2, x2)[:]
 end
 
 @testset "MvNormal --- integration with Flux" begin
-    for (d, dtype, μinit, Σinit, Σtype, r) in grid
-        ps = (; dtype, μinit, Σinit, Σtype, r)
+    for (d, dtype, minit, sinit, stype, r) in grid
+        ps = (; dtype, minit, sinit, stype, r)
         m = SumProductSet.MvNormal(d; ps...)
 
         ps = Flux.params(m)

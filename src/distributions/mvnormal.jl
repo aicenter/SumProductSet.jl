@@ -54,8 +54,8 @@ function select_s(selector, dtype, d)
 end
 function select_m(selector, dtype, d)
     selector == :uniform  && return dtype(2e0)*rand(dtype, d) .- dtype(1e0)
-    selector == :randlow  && return randn(dtype, d)
-    selector == :randhigh && return zeros(dtype, d)
+    selector == :randn  && return randn(dtype, d)
+    selector == :zero && return zeros(dtype, d)
     error("Specified mean initialization $(selector) is not supported.")
 end
 
