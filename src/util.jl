@@ -6,6 +6,7 @@ logpdf(m::NODES, x::AbstractVector{<:Mill.AbstractMillNode}) = Flux.ChainRulesCo
 end |> xr -> logpdf(m, xr)
 
 Mill.getindex(x::Mill.ProductNode{<:NamedTuple}, k::Vector{Symbol})= Mill.ProductNode(x.data[k])
+Mill.getindex(x::Mill.ProductNode{<:Tuple}, k::Vector{Int})= Mill.ProductNode(x.data[k])
 
 Base.hcat(A::SparseMatrixCSC...) = SparseArrays.sparse_hcat(A...)
 Base.vcat(A::SparseMatrixCSC...) = SparseArrays.sparse_vcat(A...)
