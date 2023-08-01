@@ -36,6 +36,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .highlight .m { color: var(--jp-mirror-editor-number-color) } /* Literal.Number */
 .highlight .s { color: var(--jp-mirror-editor-string-color) } /* Literal.String */
 .highlight .ow { color: var(--jp-mirror-editor-operator-color); font-weight: bold } /* Operator.Word */
+.highlight .pm { color: var(--jp-mirror-editor-punctuation-color) } /* Punctuation.Marker */
 .highlight .w { color: var(--jp-mirror-editor-variable-color) } /* Text.Whitespace */
 .highlight .mb { color: var(--jp-mirror-editor-number-color) } /* Literal.Number.Bin */
 .highlight .mf { color: var(--jp-mirror-editor-number-color) } /* Literal.Number.Float */
@@ -14454,25 +14455,102 @@ all of MD as it is not optimized for dense, information rich UIs.
 </style>
 
 <style type="text/css">
-a.anchor-link {
-   display: none;
+/* Force rendering true colors when outputing to pdf */
+* {
+  -webkit-print-color-adjust: exact;
 }
-.highlight  {
-    margin: 0.4em;
+
+/* Misc */
+a.anchor-link {
+  display: none;
 }
 
 /* Input area styling */
 .jp-InputArea {
-    overflow: hidden;
+  overflow: hidden;
 }
 
 .jp-InputArea-editor {
-    overflow: hidden;
+  overflow: hidden;
+}
+
+.CodeMirror.cm-s-jupyter .highlight pre {
+/* weird, but --jp-code-padding defined to be 5px but 4px horizontal padding is hardcoded for pre.CodeMirror-line */
+  padding: var(--jp-code-padding) 4px;
+  margin: 0;
+
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+
+}
+
+.jp-OutputArea-output pre {
+  line-height: inherit;
+  font-family: inherit;
+}
+
+.jp-RenderedText pre {
+  color: var(--jp-content-font-color1);
+  font-size: var(--jp-code-font-size);
+}
+
+/* Using table instead of flexbox so that we can use break-inside property */
+/* CSS rules under this comment should not be required anymore after we move to the JupyterLab 4.0 CSS */
+
+
+.jp-CodeCell.jp-mod-outputsScrolled .jp-OutputArea-prompt {
+  min-width: calc(
+    var(--jp-cell-prompt-width) - var(--jp-private-cell-scrolling-output-offset)
+  );
+}
+
+.jp-OutputArea-child {
+  display: table;
+  width: 100%;
+}
+
+.jp-OutputPrompt {
+  display: table-cell;
+  vertical-align: top;
+  min-width: var(--jp-cell-prompt-width);
+}
+
+body[data-format='mobile'] .jp-OutputPrompt {
+  display: table-row;
+}
+
+.jp-OutputArea-output {
+  display: table-cell;
+  width: 100%;
+}
+
+body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
+  display: table-row;
+}
+
+.jp-OutputArea-output.jp-OutputArea-executeResult {
+  width: 100%;
+}
+
+/* Hiding the collapser by default */
+.jp-Collapser {
+  display: none;
+}
+
+@page {
+    margin: 0.5in; /* Margin for each printed piece of paper */
 }
 
 @media print {
-  body {
-    margin: 0;
+  .jp-Cell-inputWrapper,
+  .jp-Cell-outputWrapper {
+    display: block;
+  }
+
+  .jp-OutputArea-child {
+    break-inside: avoid-page;
   }
 }
 </style>
@@ -14499,12 +14577,12 @@ a.anchor-link {
                 },
                 displayAlign: 'center',
                 CommonHTML: {
-                    linebreaks: { 
-                    automatic: true 
+                    linebreaks: {
+                    automatic: true
                     }
                 }
             });
-        
+
             MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
         }
     }
@@ -14514,17 +14592,18 @@ a.anchor-link {
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
 <div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="k">using</span> <span class="n">DrWatson</span>
-<span class="nd">@quickactivate</span> 
+<div class=" highlight hl-julia"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="n">DrWatson</span>
+<span class="nd">@quickactivate</span><span class="w"> </span>
 
-<span class="k">using</span> <span class="n">JsonGrinder</span><span class="p">,</span> <span class="n">Flux</span><span class="p">,</span> <span class="n">MLDatasets</span><span class="p">,</span> <span class="n">Statistics</span><span class="p">,</span> <span class="n">Random</span><span class="p">,</span> <span class="n">Printf</span><span class="p">,</span> <span class="n">JSON</span><span class="p">,</span> <span class="n">HierarchicalUtils</span>
-<span class="k">using</span> <span class="n">SumProductSet</span>
-<span class="k">import</span> <span class="n">Mill</span>
-<span class="k">import</span> <span class="n">Distributions</span>
+<span class="k">using</span><span class="w"> </span><span class="n">JsonGrinder</span><span class="p">,</span><span class="w"> </span><span class="n">Flux</span><span class="p">,</span><span class="w"> </span><span class="n">MLDatasets</span><span class="p">,</span><span class="w"> </span><span class="n">Statistics</span><span class="p">,</span><span class="w"> </span><span class="n">Random</span><span class="p">,</span><span class="w"> </span><span class="n">Printf</span><span class="p">,</span><span class="w"> </span><span class="n">JSON3</span><span class="p">,</span><span class="w"> </span><span class="n">HierarchicalUtils</span>
+<span class="k">using</span><span class="w"> </span><span class="n">SumProductSet</span>
+<span class="k">import</span><span class="w"> </span><span class="n">Mill</span>
 </pre></div>
 
      </div>
@@ -14533,28 +14612,36 @@ a.anchor-link {
 </div>
 
 </div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h1 id="Update-default-JsonGrinder-extractor">Update default JsonGrinder extractor<a class="anchor-link" href="#Update-default-JsonGrinder-extractor">&#182;</a></h1>
 </div>
+</div>
+</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[2]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="k">function</span> <span class="n">default_scalar_extractor</span><span class="p">()</span>
-    <span class="p">[</span>
-    <span class="p">(</span><span class="n">e</span> <span class="o">-&gt;</span> <span class="n">length</span><span class="p">(</span><span class="n">keys</span><span class="p">(</span><span class="n">e</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="mi">100</span> <span class="o">&amp;&amp;</span> <span class="n">JsonGrinder</span><span class="o">.</span><span class="n">is_numeric_or_numeric_string</span><span class="p">(</span><span class="n">e</span><span class="p">),</span>
-        <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">uniontypes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ExtractCategorical</span><span class="p">(</span><span class="n">keys</span><span class="p">(</span><span class="n">e</span><span class="p">),</span> <span class="n">uniontypes</span><span class="p">)),</span>
-    <span class="p">(</span><span class="n">e</span> <span class="o">-&gt;</span> <span class="n">JsonGrinder</span><span class="o">.</span><span class="n">is_intable</span><span class="p">(</span><span class="n">e</span><span class="p">),</span>
-        <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">uniontypes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">extractscalar</span><span class="p">(</span><span class="kt">Int64</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">uniontypes</span><span class="p">)),</span>
-    <span class="p">(</span><span class="n">e</span> <span class="o">-&gt;</span> <span class="n">JsonGrinder</span><span class="o">.</span><span class="n">is_floatable</span><span class="p">(</span><span class="n">e</span><span class="p">),</span>
-        <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">uniontypes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">extractscalar</span><span class="p">(</span><span class="kt">Float64</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">uniontypes</span><span class="p">)),</span>
-    <span class="p">(</span><span class="n">e</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="n">keys_len</span> <span class="o">=</span> <span class="n">length</span><span class="p">(</span><span class="n">keys</span><span class="p">(</span><span class="n">e</span><span class="p">));</span> <span class="n">keys_len</span> <span class="o">/</span> <span class="n">e</span><span class="o">.</span><span class="n">updated</span> <span class="o">&lt;</span> <span class="mf">0.1</span> <span class="o">&amp;&amp;</span> <span class="n">keys_len</span> <span class="o">&lt;</span> <span class="mi">10000</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">JsonGrinder</span><span class="o">.</span><span class="n">is_numeric_or_numeric_string</span><span class="p">(</span><span class="n">e</span><span class="p">)),</span>
-        <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">uniontypes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ExtractCategorical</span><span class="p">(</span><span class="n">keys</span><span class="p">(</span><span class="n">e</span><span class="p">),</span> <span class="n">uniontypes</span><span class="p">)),</span>
-    <span class="p">(</span><span class="n">e</span> <span class="o">-&gt;</span> <span class="nb">true</span><span class="p">,</span>
-        <span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">uniontypes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ExtractScalar</span><span class="p">(</span><span class="kt">Float64</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="nb">false</span><span class="p">)),]</span>
+<div class=" highlight hl-julia"><pre><span></span><span class="k">function</span><span class="w"> </span><span class="n">default_scalar_extractor</span><span class="p">()</span>
+<span class="w">    </span><span class="p">[</span>
+<span class="w">    </span><span class="p">(</span><span class="n">e</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">length</span><span class="p">(</span><span class="n">keys</span><span class="p">(</span><span class="n">e</span><span class="p">))</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">JsonGrinder</span><span class="o">.</span><span class="n">is_numeric_or_numeric_string</span><span class="p">(</span><span class="n">e</span><span class="p">),</span>
+<span class="w">        </span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ExtractCategorical</span><span class="p">(</span><span class="n">keys</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)),</span>
+<span class="w">    </span><span class="p">(</span><span class="n">e</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">JsonGrinder</span><span class="o">.</span><span class="n">is_intable</span><span class="p">(</span><span class="n">e</span><span class="p">),</span>
+<span class="w">        </span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">extractscalar</span><span class="p">(</span><span class="kt">Int32</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)),</span>
+<span class="w">    </span><span class="p">(</span><span class="n">e</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">JsonGrinder</span><span class="o">.</span><span class="n">is_floatable</span><span class="p">(</span><span class="n">e</span><span class="p">),</span>
+<span class="w">        </span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">extractscalar</span><span class="p">(</span><span class="kt">Float32</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)),</span>
+<span class="w">    </span><span class="p">(</span><span class="n">e</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">keys_len</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">length</span><span class="p">(</span><span class="n">keys</span><span class="p">(</span><span class="n">e</span><span class="p">));</span><span class="w"> </span><span class="n">keys_len</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">e</span><span class="o">.</span><span class="n">updated</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.1</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">keys_len</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">10000</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">!</span><span class="n">JsonGrinder</span><span class="o">.</span><span class="n">is_numeric_or_numeric_string</span><span class="p">(</span><span class="n">e</span><span class="p">)),</span>
+<span class="w">        </span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ExtractCategorical</span><span class="p">(</span><span class="n">keys</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)),</span>
+<span class="w">    </span><span class="p">(</span><span class="n">e</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nb">true</span><span class="p">,</span>
+<span class="w">        </span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ExtractScalar</span><span class="p">(</span><span class="kt">Float32</span><span class="p">,</span><span class="w"> </span><span class="mf">0.</span><span class="p">,</span><span class="w"> </span><span class="mf">1.</span><span class="p">,</span><span class="w"> </span><span class="nb">false</span><span class="p">)),]</span>
 <span class="k">end</span>
 </pre></div>
 
@@ -14564,12 +14651,12 @@ a.anchor-link {
 </div>
 
 <div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
 
@@ -14587,20 +14674,30 @@ a.anchor-link {
 </div>
 
 </div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h1 id="Extract-data-into-MILL-format">Extract data into MILL format<a class="anchor-link" href="#Extract-data-into-MILL-format">&#182;</a></h1>
 </div>
+</div>
+</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[3]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">MLDatasets</span><span class="o">.</span><span class="n">Mutagenesis</span><span class="o">.</span><span class="n">traindata</span><span class="p">();</span>
-<span class="n">sch</span> <span class="o">=</span> <span class="n">JsonGrinder</span><span class="o">.</span><span class="n">schema</span><span class="p">(</span><span class="n">x_train</span><span class="p">)</span>
-<span class="n">extractor</span> <span class="o">=</span> <span class="n">suggestextractor</span><span class="p">(</span><span class="n">sch</span><span class="p">,</span> <span class="p">(;</span> <span class="n">scalar_extractors</span> <span class="o">=</span> <span class="n">default_scalar_extractor</span><span class="p">()))</span>
-<span class="n">ds_train</span> <span class="o">=</span> <span class="n">Mill</span><span class="o">.</span><span class="n">catobs</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="p">(</span><span class="n">x_train</span><span class="p">))</span>
+<div class=" highlight hl-julia"><pre><span></span><span class="n">train_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MLDatasets</span><span class="o">.</span><span class="n">Mutagenesis</span><span class="p">(</span><span class="n">split</span><span class="o">=</span><span class="ss">:train</span><span class="p">)</span>
+<span class="n">x_train</span><span class="p">,</span><span class="w"> </span><span class="n">y_train</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">train_data</span><span class="o">.</span><span class="n">features</span><span class="p">,</span><span class="w"> </span><span class="n">train_data</span><span class="o">.</span><span class="n">targets</span>
+<span class="n">y_train</span><span class="w"> </span><span class="o">.+=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="n">sch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">JsonGrinder</span><span class="o">.</span><span class="n">schema</span><span class="p">(</span><span class="n">x_train</span><span class="p">)</span>
+<span class="n">extractor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">suggestextractor</span><span class="p">(</span><span class="n">sch</span><span class="p">,</span><span class="w"> </span><span class="p">(;</span><span class="w"> </span><span class="n">scalar_extractors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">default_scalar_extractor</span><span class="p">()))</span>
+<span class="n">ds_train</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Mill</span><span class="o">.</span><span class="n">catobs</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="p">(</span><span class="n">x_train</span><span class="p">))</span>
 </pre></div>
 
      </div>
@@ -14609,12 +14706,12 @@ a.anchor-link {
 </div>
 
 <div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
 
@@ -14622,14 +14719,19 @@ a.anchor-link {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre><span class="ansi-blue-fg">ProductNode</span><span class="ansi-black-intense-fg"> 	# 100 obs, 104 bytes</span>
-<span class="ansi-blue-fg">  ├─── lumo: </span>ArrayNode(99×100 OneHotArray with Bool elements)<span class="ansi-black-intense-fg"> 	# 100 obs, 456  </span><span class="ansi-black-intense-fg">⋯</span>
-<span class="ansi-blue-fg">  ├─── inda: </span>ArrayNode(2×100 OneHotArray with Bool elements)<span class="ansi-black-intense-fg"> 	# 100 obs, 456 b </span><span class="ansi-black-intense-fg">⋯</span>
-<span class="ansi-blue-fg">  ├─── logp: </span>ArrayNode(63×100 OneHotArray with Bool elements)<span class="ansi-black-intense-fg"> 	# 100 obs, 456  </span><span class="ansi-black-intense-fg">⋯</span>
-<span class="ansi-blue-fg">  ├─── ind1: </span>ArrayNode(3×100 OneHotArray with Bool elements)<span class="ansi-black-intense-fg"> 	# 100 obs, 456 b </span><span class="ansi-black-intense-fg">⋯</span>
-<span class="ansi-blue-fg">  ╰── atoms: </span><span class="ansi-red-fg">BagNode</span><span class="ansi-black-intense-fg"> 	# 100 obs, 1.680 KiB</span>
-<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">  ╰── </span><span class="ansi-green-fg">ProductNode</span><span class="ansi-black-intense-fg"> 	# 2529 obs, 64 bytes</span>
-<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  ┊</span></pre>
+<pre><span class="ansi-blue-fg">ProductNode</span><span class="ansi-black-intense-fg">  # 100 obs, 104 bytes</span>
+<span class="ansi-blue-fg">  ├─── lumo: </span>ArrayNode(99×100 OneHotArray with Bool elements)<span class="ansi-black-intense-fg">  # 100 obs, 456  </span><span class="ansi-black-intense-fg">⋯</span>
+<span class="ansi-blue-fg">  ├─── inda: </span>ArrayNode(2×100 OneHotArray with Bool elements)<span class="ansi-black-intense-fg">  # 100 obs, 456 b </span><span class="ansi-black-intense-fg">⋯</span>
+<span class="ansi-blue-fg">  ├─── logp: </span>ArrayNode(63×100 OneHotArray with Bool elements)<span class="ansi-black-intense-fg">  # 100 obs, 456  </span><span class="ansi-black-intense-fg">⋯</span>
+<span class="ansi-blue-fg">  ├─── ind1: </span>ArrayNode(3×100 OneHotArray with Bool elements)<span class="ansi-black-intense-fg">  # 100 obs, 456 b </span><span class="ansi-black-intense-fg">⋯</span>
+<span class="ansi-blue-fg">  ╰── atoms: </span><span class="ansi-red-fg">BagNode</span><span class="ansi-black-intense-fg">  # 100 obs, 1.680 KiB</span>
+<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">  ╰── </span><span class="ansi-green-fg">ProductNode</span><span class="ansi-black-intense-fg">  # 2529 obs, 64 bytes</span>
+<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  ├──── element: </span>ArrayNode(7×2529 OneHotArray with Bool ele <span class="ansi-black-intense-fg">⋯</span>
+<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  ├────── bonds: </span><span class="ansi-yellow-fg">BagNode</span><span class="ansi-black-intense-fg">  # 2529 obs, 39.602 KiB</span>
+<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  │              </span><span class="ansi-yellow-fg">  ╰── </span><span class="ansi-cyan-fg">ProductNode</span><span class="ansi-black-intense-fg">  # 5402 obs, 32 bytes</span>
+<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  │              </span><span class="ansi-yellow-fg">      </span><span class="ansi-cyan-fg">  ┊</span>
+<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  ├───── charge: </span>ArrayNode(1×2529 Array with Float32 elemen <span class="ansi-black-intense-fg">⋯</span>
+<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  ╰── atom_type: </span>ArrayNode(29×2529 OneHotArray with Bool el <span class="ansi-black-intense-fg">⋯</span></pre>
 </div>
 
 </div>
@@ -14640,11 +14742,13 @@ a.anchor-link {
 
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[4]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="n">JSON</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="n">x_train</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mi">2</span><span class="p">)</span>
+<div class=" highlight hl-julia"><pre><span></span><span class="n">printtree</span><span class="p">(</span><span class="n">sch</span><span class="p">,</span><span class="w"> </span><span class="n">htrunc</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span><span class="w"> </span><span class="n">vtrunc</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
 </pre></div>
 
      </div>
@@ -14653,593 +14757,33 @@ a.anchor-link {
 </div>
 
 <div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
 <div class="jp-OutputArea-child">
-
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>{
-  &#34;lumo&#34;: -1.246,
-  &#34;inda&#34;: 0,
-  &#34;logp&#34;: 4.23,
-  &#34;ind1&#34;: 1,
-  &#34;atoms&#34;: [
-    {
-      &#34;element&#34;: &#34;c&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;h&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: 0.142,
-          &#34;atom_type&#34;: 3
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        }
-      ],
-      &#34;charge&#34;: -0.117,
-      &#34;atom_type&#34;: 22
-    },
-    {
-      &#34;element&#34;: &#34;h&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        }
-      ],
-      &#34;charge&#34;: 0.142,
-      &#34;atom_type&#34;: 3
-    },
-    {
-      &#34;element&#34;: &#34;c&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: 0.013,
-          &#34;atom_type&#34;: 27
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.087,
-          &#34;atom_type&#34;: 195
-        }
-      ],
-      &#34;charge&#34;: -0.087,
-      &#34;atom_type&#34;: 27
-    },
-    {
-      &#34;element&#34;: &#34;c&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.087,
-          &#34;atom_type&#34;: 27
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        }
-      ],
-      &#34;charge&#34;: 0.013,
-      &#34;atom_type&#34;: 27
-    },
-    {
-      &#34;element&#34;: &#34;c&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: 0.013,
-          &#34;atom_type&#34;: 27
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;h&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: 0.143,
-          &#34;atom_type&#34;: 3
-        }
-      ],
-      &#34;charge&#34;: -0.117,
-      &#34;atom_type&#34;: 22
-    },
-    {
-      &#34;element&#34;: &#34;c&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;h&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: 0.143,
-          &#34;atom_type&#34;: 3
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: 0.013,
-          &#34;atom_type&#34;: 195
-        }
-      ],
-      &#34;charge&#34;: -0.117,
-      &#34;atom_type&#34;: 22
-    },
-    {
-      &#34;element&#34;: &#34;h&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        }
-      ],
-      &#34;charge&#34;: 0.143,
-      &#34;atom_type&#34;: 3
-    },
-    {
-      &#34;element&#34;: &#34;h&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        }
-      ],
-      &#34;charge&#34;: 0.143,
-      &#34;atom_type&#34;: 3
-    },
-    {
-      &#34;element&#34;: &#34;c&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.087,
-          &#34;atom_type&#34;: 27
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;h&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: 0.142,
-          &#34;atom_type&#34;: 3
-        }
-      ],
-      &#34;charge&#34;: -0.117,
-      &#34;atom_type&#34;: 22
-    },
-    {
-      &#34;element&#34;: &#34;c&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;h&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: 0.143,
-          &#34;atom_type&#34;: 3
-        }
-      ],
-      &#34;charge&#34;: -0.117,
-      &#34;atom_type&#34;: 22
-    },
-    {
-      &#34;element&#34;: &#34;c&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;n&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: 0.812,
-          &#34;atom_type&#34;: 38
-        }
-      ],
-      &#34;charge&#34;: -0.117,
-      &#34;atom_type&#34;: 22
-    },
-    {
-      &#34;element&#34;: &#34;c&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;h&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: 0.143,
-          &#34;atom_type&#34;: 3
-        }
-      ],
-      &#34;charge&#34;: -0.117,
-      &#34;atom_type&#34;: 22
-    },
-    {
-      &#34;element&#34;: &#34;c&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: 0.013,
-          &#34;atom_type&#34;: 27
-        },
-        {
-          &#34;element&#34;: &#34;h&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: 0.142,
-          &#34;atom_type&#34;: 3
-        }
-      ],
-      &#34;charge&#34;: -0.117,
-      &#34;atom_type&#34;: 22
-    },
-    {
-      &#34;element&#34;: &#34;h&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        }
-      ],
-      &#34;charge&#34;: 0.142,
-      &#34;atom_type&#34;: 3
-    },
-    {
-      &#34;element&#34;: &#34;h&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        }
-      ],
-      &#34;charge&#34;: 0.143,
-      &#34;atom_type&#34;: 3
-    },
-    {
-      &#34;element&#34;: &#34;h&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        }
-      ],
-      &#34;charge&#34;: 0.142,
-      &#34;atom_type&#34;: 3
-    },
-    {
-      &#34;element&#34;: &#34;n&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;o&#34;,
-          &#34;bond_type&#34;: 2,
-          &#34;charge&#34;: -0.388,
-          &#34;atom_type&#34;: 40
-        },
-        {
-          &#34;element&#34;: &#34;o&#34;,
-          &#34;bond_type&#34;: 2,
-          &#34;charge&#34;: -0.388,
-          &#34;atom_type&#34;: 40
-        }
-      ],
-      &#34;charge&#34;: 0.812,
-      &#34;atom_type&#34;: 38
-    },
-    {
-      &#34;element&#34;: &#34;o&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;n&#34;,
-          &#34;bond_type&#34;: 2,
-          &#34;charge&#34;: 0.812,
-          &#34;atom_type&#34;: 38
-        }
-      ],
-      &#34;charge&#34;: -0.388,
-      &#34;atom_type&#34;: 40
-    },
-    {
-      &#34;element&#34;: &#34;o&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;n&#34;,
-          &#34;bond_type&#34;: 2,
-          &#34;charge&#34;: 0.812,
-          &#34;atom_type&#34;: 38
-        }
-      ],
-      &#34;charge&#34;: -0.388,
-      &#34;atom_type&#34;: 40
-    },
-    {
-      &#34;element&#34;: &#34;c&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.087,
-          &#34;atom_type&#34;: 195
-        },
-        {
-          &#34;element&#34;: &#34;h&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: 0.142,
-          &#34;atom_type&#34;: 3
-        }
-      ],
-      &#34;charge&#34;: -0.117,
-      &#34;atom_type&#34;: 22
-    },
-    {
-      &#34;element&#34;: &#34;c&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.087,
-          &#34;atom_type&#34;: 27
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: 0.013,
-          &#34;atom_type&#34;: 195
-        }
-      ],
-      &#34;charge&#34;: -0.087,
-      &#34;atom_type&#34;: 195
-    },
-    {
-      &#34;element&#34;: &#34;c&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.087,
-          &#34;atom_type&#34;: 195
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        }
-      ],
-      &#34;charge&#34;: 0.013,
-      &#34;atom_type&#34;: 195
-    },
-    {
-      &#34;element&#34;: &#34;c&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: 0.013,
-          &#34;atom_type&#34;: 195
-        },
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 7,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        },
-        {
-          &#34;element&#34;: &#34;h&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: 0.142,
-          &#34;atom_type&#34;: 3
-        }
-      ],
-      &#34;charge&#34;: -0.117,
-      &#34;atom_type&#34;: 22
-    },
-    {
-      &#34;element&#34;: &#34;h&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        }
-      ],
-      &#34;charge&#34;: 0.142,
-      &#34;atom_type&#34;: 3
-    },
-    {
-      &#34;element&#34;: &#34;h&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        }
-      ],
-      &#34;charge&#34;: 0.143,
-      &#34;atom_type&#34;: 3
-    },
-    {
-      &#34;element&#34;: &#34;h&#34;,
-      &#34;bonds&#34;: [
-        {
-          &#34;element&#34;: &#34;c&#34;,
-          &#34;bond_type&#34;: 1,
-          &#34;charge&#34;: -0.117,
-          &#34;atom_type&#34;: 22
-        }
-      ],
-      &#34;charge&#34;: 0.142,
-      &#34;atom_type&#34;: 3
-    }
-  ]
-}
-</pre>
-</div>
-</div>
-
-</div>
-
-</div>
-
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[5]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="n">printtree</span><span class="p">(</span><span class="n">sch</span><span class="p">,</span> <span class="n">htrunc</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">vtrunc</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-
-
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre><span class="ansi-blue-fg">[Dict]</span><span class="ansi-black-intense-fg"> 	# updated = 100</span>
-<span class="ansi-blue-fg">  ├─── lumo: </span>[Scalar - Float64], 98 unique values<span class="ansi-black-intense-fg"> 	# updated = 100</span>
-<span class="ansi-blue-fg">  ├─── inda: </span>[Scalar - Int64], 1 unique values<span class="ansi-black-intense-fg"> 	# updated = 100</span>
-<span class="ansi-blue-fg">  ├─── logp: </span>[Scalar - Float64,Int64], 62 unique values<span class="ansi-black-intense-fg"> 	# updated = 100</span>
-<span class="ansi-blue-fg">  ├─── ind1: </span>[Scalar - Int64], 2 unique values<span class="ansi-black-intense-fg"> 	# updated = 100</span>
-<span class="ansi-blue-fg">  ╰── atoms: </span><span class="ansi-red-fg">[List]</span><span class="ansi-black-intense-fg"> 	# updated = 100</span>
-<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">  ╰── </span><span class="ansi-green-fg">[Dict]</span><span class="ansi-black-intense-fg"> 	# updated = 2529</span>
-<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  ├──── element: </span>[Scalar - String], 6 unique values<span class="ansi-black-intense-fg"> 	# updated = 2529</span>
-<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  ├────── bonds: </span><span class="ansi-yellow-fg">[List]</span><span class="ansi-black-intense-fg"> 	# updated = 2529</span>
-<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  │              </span><span class="ansi-yellow-fg">  ╰── </span><span class="ansi-cyan-fg">[Dict]</span><span class="ansi-black-intense-fg"> 	# updated = 5402</span>
-<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  │              </span><span class="ansi-yellow-fg">      </span><span class="ansi-cyan-fg">  ├──── element: </span>[Scalar - String], 6 unique values<span class="ansi-black-intense-fg"> 	# updated = 5402</span>
-<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  │              </span><span class="ansi-yellow-fg">      </span><span class="ansi-cyan-fg">  ├── bond_type: </span>[Scalar - Int64], 3 unique values<span class="ansi-black-intense-fg"> 	# updated = 5402</span>
-<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  │              </span><span class="ansi-yellow-fg">      </span><span class="ansi-cyan-fg">  ├───── charge: </span>[Scalar - Float64], 318 unique values<span class="ansi-black-intense-fg"> 	# updated = 5402</span>
-<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  │              </span><span class="ansi-yellow-fg">      </span><span class="ansi-cyan-fg">  ╰── atom_type: </span>[Scalar - Int64], 28 unique values<span class="ansi-black-intense-fg"> 	# updated = 5402</span>
-<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  ├───── charge: </span>[Scalar - Float64], 318 unique values<span class="ansi-black-intense-fg"> 	# updated = 2529</span>
-<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  ╰── atom_type: </span>[Scalar - Int64], 28 unique values<span class="ansi-black-intense-fg"> 	# updated = 2529</span>
+<pre><span class="ansi-blue-fg">[Dict]</span><span class="ansi-black-intense-fg">  # updated = 100</span>
+<span class="ansi-blue-fg">  ├─── lumo: </span>[Scalar - Float64], 98 unique values<span class="ansi-black-intense-fg">  # updated = 100</span>
+<span class="ansi-blue-fg">  ├─── inda: </span>[Scalar - Int64], 1 unique values<span class="ansi-black-intense-fg">  # updated = 100</span>
+<span class="ansi-blue-fg">  ├─── logp: </span>[Scalar - Float64,Int64], 62 unique values<span class="ansi-black-intense-fg">  # updated = 100</span>
+<span class="ansi-blue-fg">  ├─── ind1: </span>[Scalar - Int64], 2 unique values<span class="ansi-black-intense-fg">  # updated = 100</span>
+<span class="ansi-blue-fg">  ╰── atoms: </span><span class="ansi-red-fg">[List]</span><span class="ansi-black-intense-fg">  # updated = 100</span>
+<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">  ╰── </span><span class="ansi-green-fg">[Dict]</span><span class="ansi-black-intense-fg">  # updated = 2529</span>
+<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  ├──── element: </span>[Scalar - String], 6 unique values<span class="ansi-black-intense-fg">  # updated = 2529</span>
+<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  ├────── bonds: </span><span class="ansi-yellow-fg">[List]</span><span class="ansi-black-intense-fg">  # updated = 2529</span>
+<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  │              </span><span class="ansi-yellow-fg">  ╰── </span><span class="ansi-cyan-fg">[Dict]</span><span class="ansi-black-intense-fg">  # updated = 5402</span>
+<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  │              </span><span class="ansi-yellow-fg">      </span><span class="ansi-cyan-fg">  ├──── element: </span>[Scalar - String], 6 unique values<span class="ansi-black-intense-fg">  # updated = 5402</span>
+<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  │              </span><span class="ansi-yellow-fg">      </span><span class="ansi-cyan-fg">  ├── bond_type: </span>[Scalar - Int64], 3 unique values<span class="ansi-black-intense-fg">  # updated = 5402</span>
+<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  │              </span><span class="ansi-yellow-fg">      </span><span class="ansi-cyan-fg">  ├───── charge: </span>[Scalar - Float64], 318 unique values<span class="ansi-black-intense-fg">  # updated = 5402</span>
+<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  │              </span><span class="ansi-yellow-fg">      </span><span class="ansi-cyan-fg">  ╰── atom_type: </span>[Scalar - Int64], 28 unique values<span class="ansi-black-intense-fg">  # updated = 5402</span>
+<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  ├───── charge: </span>[Scalar - Float64], 318 unique values<span class="ansi-black-intense-fg">  # updated = 2529</span>
+<span class="ansi-blue-fg">             </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  ╰── atom_type: </span>[Scalar - Int64], 28 unique values<span class="ansi-black-intense-fg">  # updated = 2529</span>
 </pre>
 </div>
 </div>
@@ -15250,19 +14794,16 @@ a.anchor-link {
 
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[6]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">MLDatasets</span><span class="o">.</span><span class="n">Mutagenesis</span><span class="o">.</span><span class="n">traindata</span><span class="p">();</span>
-<span class="n">y_train</span> <span class="o">.+=</span> <span class="mi">1</span><span class="p">;</span>
-<span class="n">sch</span> <span class="o">=</span> <span class="n">JsonGrinder</span><span class="o">.</span><span class="n">schema</span><span class="p">(</span><span class="n">x_train</span><span class="p">)</span>
-<span class="n">extractor</span> <span class="o">=</span> <span class="n">suggestextractor</span><span class="p">(</span><span class="n">sch</span><span class="p">,</span> <span class="p">(;</span> <span class="n">scalar_extractors</span> <span class="o">=</span> <span class="n">default_scalar_extractor</span><span class="p">()))</span>
-<span class="n">ds_train</span> <span class="o">=</span> <span class="n">Mill</span><span class="o">.</span><span class="n">catobs</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="p">(</span><span class="n">x_train</span><span class="p">))</span>
-
-<span class="n">x_test</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">MLDatasets</span><span class="o">.</span><span class="n">Mutagenesis</span><span class="o">.</span><span class="n">testdata</span><span class="p">();</span>
-<span class="n">y_test</span> <span class="o">.+=</span> <span class="mi">1</span><span class="p">;</span>
-<span class="n">ds_test</span> <span class="o">=</span> <span class="n">Mill</span><span class="o">.</span><span class="n">catobs</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="p">(</span><span class="n">x_test</span><span class="p">));</span>
+<div class=" highlight hl-julia"><pre><span></span><span class="n">test_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MLDatasets</span><span class="o">.</span><span class="n">Mutagenesis</span><span class="p">(</span><span class="n">split</span><span class="o">=</span><span class="ss">:test</span><span class="p">)</span>
+<span class="n">x_test</span><span class="p">,</span><span class="w"> </span><span class="n">y_test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">test_data</span><span class="o">.</span><span class="n">features</span><span class="p">,</span><span class="w"> </span><span class="n">test_data</span><span class="o">.</span><span class="n">targets</span>
+<span class="n">y_test</span><span class="w"> </span><span class="o">.+=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="n">ds_test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Mill</span><span class="o">.</span><span class="n">catobs</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="p">(</span><span class="n">x_test</span><span class="p">));</span>
 </pre></div>
 
      </div>
@@ -15271,24 +14812,32 @@ a.anchor-link {
 </div>
 
 </div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h1 id="Define-training-utility-functions">Define training utility functions<a class="anchor-link" href="#Define-training-utility-functions">&#182;</a></h1>
 </div>
+</div>
+</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[7]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[6]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="k">function</span> <span class="n">train!</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">;</span> <span class="n">niter</span><span class="o">::</span><span class="kt">Int</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="n">ADAM</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">cb</span><span class="o">=</span><span class="n">iter</span><span class="o">-&gt;</span><span class="p">())</span>
-    <span class="n">ps</span> <span class="o">=</span> <span class="n">Flux</span><span class="o">.</span><span class="n">params</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-    <span class="n">cb</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="mi">1</span><span class="o">:</span><span class="n">niter</span>
-        <span class="n">gs</span> <span class="o">=</span> <span class="n">gradient</span><span class="p">(()</span> <span class="o">-&gt;</span> <span class="n">SumProductSet</span><span class="o">.</span><span class="n">sl_loss</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">ps</span><span class="p">)</span>
-        <span class="n">Flux</span><span class="o">.</span><span class="n">Optimise</span><span class="o">.</span><span class="n">update!</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">ps</span><span class="p">,</span> <span class="n">gs</span><span class="p">)</span>
-        <span class="n">cb</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-    <span class="k">end</span>
+<div class=" highlight hl-julia"><pre><span></span><span class="k">function</span><span class="w"> </span><span class="n">train!</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">;</span><span class="w"> </span><span class="n">niter</span><span class="o">::</span><span class="kt">Int</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="w"> </span><span class="n">opt</span><span class="o">=</span><span class="n">ADAM</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span><span class="w"> </span><span class="n">cb</span><span class="o">=</span><span class="n">iter</span><span class="o">-&gt;</span><span class="p">())</span>
+<span class="w">    </span><span class="n">ps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Flux</span><span class="o">.</span><span class="n">params</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="w">    </span><span class="n">cb</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mi">1</span><span class="o">:</span><span class="n">niter</span>
+<span class="w">        </span><span class="n">gs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gradient</span><span class="p">(()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">SumProductSet</span><span class="o">.</span><span class="n">ce_loss</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">),</span><span class="w"> </span><span class="n">ps</span><span class="p">)</span>
+<span class="w">        </span><span class="n">Flux</span><span class="o">.</span><span class="n">Optimise</span><span class="o">.</span><span class="n">update!</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span><span class="w"> </span><span class="n">ps</span><span class="p">,</span><span class="w"> </span><span class="n">gs</span><span class="p">)</span>
+<span class="w">        </span><span class="n">cb</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="w">    </span><span class="k">end</span>
 <span class="k">end</span>
 </pre></div>
 
@@ -15298,14 +14847,14 @@ a.anchor-link {
 </div>
 
 <div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
 
 
 
@@ -15322,11 +14871,13 @@ a.anchor-link {
 
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[8]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[7]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="n">predict</span> <span class="o">=</span> <span class="n">x</span><span class="o">-&gt;</span> <span class="n">Flux</span><span class="o">.</span><span class="n">onecold</span><span class="p">(</span><span class="n">softmax</span><span class="p">(</span><span class="n">logjnt</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">x</span><span class="p">)))</span>
+<div class=" highlight hl-julia"><pre><span></span><span class="n">predict</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Flux</span><span class="o">.</span><span class="n">onecold</span><span class="p">(</span><span class="n">softmax</span><span class="p">(</span><span class="n">logjnt</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">)))</span>
 </pre></div>
 
      </div>
@@ -15335,14 +14886,14 @@ a.anchor-link {
 </div>
 
 <div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
 
 
 
@@ -15359,16 +14910,18 @@ a.anchor-link {
 
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[9]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[8]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="n">accuracy</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">=</span> <span class="n">mean</span><span class="p">(</span><span class="n">y</span> <span class="o">.==</span> <span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-<span class="k">function</span> <span class="n">status</span><span class="p">(</span><span class="n">iter</span><span class="p">,</span> <span class="n">x_trn</span><span class="p">,</span> <span class="n">y_trn</span><span class="p">,</span> <span class="n">x_tst</span><span class="p">,</span> <span class="n">y_tst</span><span class="p">)</span>
-    <span class="n">acc_trn</span> <span class="o">=</span> <span class="n">accuracy</span><span class="p">(</span><span class="n">y_trn</span><span class="p">,</span> <span class="n">x_trn</span><span class="p">)</span> 
-    <span class="n">acc_tst</span> <span class="o">=</span> <span class="n">accuracy</span><span class="p">(</span><span class="n">y_tst</span><span class="p">,</span> <span class="n">x_tst</span><span class="p">)</span>
-    
-    <span class="nd">@printf</span><span class="p">(</span><span class="s">&quot;Epoch </span><span class="si">%i</span><span class="s"> - acc: | </span><span class="si">%.3f</span><span class="s">  </span><span class="si">%.3f</span><span class="s"> | </span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">iter</span><span class="p">,</span> <span class="n">acc_trn</span><span class="p">,</span> <span class="n">acc_tst</span><span class="p">)</span>
+<div class=" highlight hl-julia"><pre><span></span><span class="n">accuracy</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mean</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">.==</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="k">function</span><span class="w"> </span><span class="n">status</span><span class="p">(</span><span class="n">iter</span><span class="p">,</span><span class="w"> </span><span class="n">x_trn</span><span class="p">,</span><span class="w"> </span><span class="n">y_trn</span><span class="p">,</span><span class="w"> </span><span class="n">x_tst</span><span class="p">,</span><span class="w"> </span><span class="n">y_tst</span><span class="p">)</span>
+<span class="w">    </span><span class="n">acc_trn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">accuracy</span><span class="p">(</span><span class="n">y_trn</span><span class="p">,</span><span class="w"> </span><span class="n">x_trn</span><span class="p">)</span><span class="w"> </span>
+<span class="w">    </span><span class="n">acc_tst</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">accuracy</span><span class="p">(</span><span class="n">y_tst</span><span class="p">,</span><span class="w"> </span><span class="n">x_tst</span><span class="p">)</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="nd">@printf</span><span class="p">(</span><span class="s">&quot;Epoch </span><span class="si">%i</span><span class="s"> - acc: | </span><span class="si">%.3f</span><span class="s">  </span><span class="si">%.3f</span><span class="s"> | </span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">iter</span><span class="p">,</span><span class="w"> </span><span class="n">acc_trn</span><span class="p">,</span><span class="w"> </span><span class="n">acc_tst</span><span class="p">)</span>
 <span class="k">end</span>
 </pre></div>
 
@@ -15378,14 +14931,14 @@ a.anchor-link {
 </div>
 
 <div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[9]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
 
 
 
@@ -15401,24 +14954,32 @@ a.anchor-link {
 </div>
 
 </div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h1 id="Initialize-model-which-reflects-training-data">Initialize model which reflects training data<a class="anchor-link" href="#Initialize-model-which-reflects-training-data">&#182;</a></h1>
 </div>
+</div>
+</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[10]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[9]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-julia"><pre><span></span><span class="n">Random</span><span class="o">.</span><span class="n">seed!</span><span class="p">(</span><span class="mi">1234</span><span class="p">);</span>
-<span class="n">dir_rand</span> <span class="o">=</span> <span class="n">d</span><span class="o">-&gt;</span><span class="n">rand</span><span class="p">(</span><span class="n">Distributions</span><span class="o">.</span><span class="n">Dirichlet</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="mi">10</span><span class="o">*</span><span class="n">d</span><span class="p">))</span>
-<span class="n">f_cat</span> <span class="o">=</span> <span class="n">d</span><span class="o">-&gt;</span><span class="n">_Categorical</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="p">(</span><span class="n">dir_rand</span><span class="p">(</span><span class="n">d</span><span class="p">)))</span> <span class="c"># choose how to represent categorical variables</span>
-<span class="n">f_cont</span> <span class="o">=</span> <span class="n">d</span><span class="o">-&gt;</span><span class="n">gmm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>  <span class="c"># choose how to represent continuous variables</span>
+<span class="n">dir_rand</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rand</span><span class="p">(</span><span class="n">d</span><span class="p">);</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">./</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+<span class="n">f_cat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">d</span><span class="o">-&gt;</span><span class="n">Categorical</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="p">(</span><span class="n">dir_rand</span><span class="p">(</span><span class="n">d</span><span class="p">)))</span><span class="w"> </span><span class="c"># choose how to represent categorical variables</span>
+<span class="n">f_cont</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">d</span><span class="o">-&gt;</span><span class="n">gmm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="n">d</span><span class="p">)</span><span class="w">  </span><span class="c"># choose how to represent continuous variables</span>
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">reflectinmodel</span><span class="p">(</span><span class="n">ds_train</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">2</span><span class="p">;</span> <span class="n">f_cont</span><span class="o">=</span><span class="n">f_cont</span><span class="p">,</span> <span class="n">f_cat</span><span class="o">=</span><span class="n">f_cat</span><span class="p">)</span>
-<span class="n">cb</span> <span class="o">=</span> <span class="n">i</span> <span class="o">-&gt;</span> <span class="n">status</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">ds_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">ds_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
-<span class="n">train!</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">ds_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">;</span> <span class="n">niter</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="n">ADAM</span><span class="p">(</span><span class="mf">0.25</span><span class="p">),</span> <span class="n">cb</span><span class="o">=</span><span class="n">cb</span><span class="p">)</span>
+<span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">reflectinmodel</span><span class="p">(</span><span class="n">ds_train</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span>
+<span class="n">cb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">status</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">ds_train</span><span class="p">,</span><span class="w"> </span><span class="n">y_train</span><span class="p">,</span><span class="w"> </span><span class="n">ds_test</span><span class="p">,</span><span class="w"> </span><span class="n">y_test</span><span class="p">)</span>
+<span class="nd">@time</span><span class="w"> </span><span class="n">train!</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">ds_train</span><span class="p">,</span><span class="w"> </span><span class="n">y_train</span><span class="p">;</span><span class="w"> </span><span class="n">niter</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="w"> </span><span class="n">opt</span><span class="o">=</span><span class="n">ADAM</span><span class="p">(</span><span class="mf">0.2</span><span class="p">),</span><span class="w"> </span><span class="n">cb</span><span class="o">=</span><span class="n">cb</span><span class="p">)</span>
 </pre></div>
 
      </div>
@@ -15427,28 +14988,119 @@ a.anchor-link {
 </div>
 
 <div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
 <div class="jp-OutputArea-child">
-
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
 <pre>Epoch 0 - acc: | 0.610  0.682 | 
-Epoch 1 - acc: | 0.620  0.682 | 
-Epoch 2 - acc: | 0.820  0.705 | 
-Epoch 3 - acc: | 0.790  0.750 | 
-Epoch 4 - acc: | 0.790  0.659 | 
-Epoch 5 - acc: | 0.790  0.705 | 
-Epoch 6 - acc: | 0.790  0.727 | 
-Epoch 7 - acc: | 0.790  0.727 | 
-Epoch 8 - acc: | 0.790  0.727 | 
-Epoch 9 - acc: | 0.790  0.727 | 
-Epoch 10 - acc: | 0.790  0.727 | 
+Epoch 1 - acc: | 0.610  0.682 | 
+Epoch 2 - acc: | 0.610  0.682 | 
+Epoch 3 - acc: | 0.670  0.682 | 
+Epoch 4 - acc: | 0.850  0.773 | 
+Epoch 5 - acc: | 0.850  0.795 | 
+Epoch 6 - acc: | 0.830  0.773 | 
+Epoch 7 - acc: | 0.820  0.818 | 
+Epoch 8 - acc: | 0.800  0.750 | 
+Epoch 9 - acc: | 0.800  0.727 | 
+Epoch 10 - acc: | 0.790  0.682 | 
+Epoch 11 - acc: | 0.790  0.659 | 
+Epoch 12 - acc: | 0.790  0.682 | 
+Epoch 13 - acc: | 0.790  0.705 | 
+Epoch 14 - acc: | 0.790  0.727 | 
+Epoch 15 - acc: | 0.800  0.750 | 
+Epoch 16 - acc: | 0.800  0.773 | 
+Epoch 17 - acc: | 0.840  0.773 | 
+Epoch 18 - acc: | 0.890  0.773 | 
+Epoch 19 - acc: | 0.880  0.773 | 
+Epoch 20 - acc: | 0.880  0.795 | 
+Epoch 21 - acc: | 0.870  0.795 | 
+Epoch 22 - acc: | 0.870  0.795 | 
+Epoch 23 - acc: | 0.880  0.795 | 
+Epoch 24 - acc: | 0.890  0.795 | 
+Epoch 25 - acc: | 0.880  0.795 | 
+Epoch 26 - acc: | 0.880  0.795 | 
+Epoch 27 - acc: | 0.880  0.773 | 
+Epoch 28 - acc: | 0.870  0.773 | 
+Epoch 29 - acc: | 0.850  0.773 | 
+Epoch 30 - acc: | 0.840  0.773 | 
+Epoch 31 - acc: | 0.840  0.773 | 
+Epoch 32 - acc: | 0.850  0.773 | 
+Epoch 33 - acc: | 0.870  0.773 | 
+Epoch 34 - acc: | 0.870  0.773 | 
+Epoch 35 - acc: | 0.880  0.773 | 
+Epoch 36 - acc: | 0.880  0.773 | 
+Epoch 37 - acc: | 0.880  0.773 | 
+Epoch 38 - acc: | 0.880  0.773 | 
+Epoch 39 - acc: | 0.860  0.773 | 
+Epoch 40 - acc: | 0.880  0.773 | 
+Epoch 41 - acc: | 0.880  0.773 | 
+Epoch 42 - acc: | 0.880  0.773 | 
+Epoch 43 - acc: | 0.880  0.773 | 
+Epoch 44 - acc: | 0.880  0.773 | 
+Epoch 45 - acc: | 0.860  0.773 | 
+Epoch 46 - acc: | 0.850  0.773 | 
+Epoch 47 - acc: | 0.850  0.773 | 
+Epoch 48 - acc: | 0.850  0.773 | 
+Epoch 49 - acc: | 0.850  0.773 | 
+Epoch 50 - acc: | 0.850  0.773 | 
+Epoch 51 - acc: | 0.860  0.773 | 
+Epoch 52 - acc: | 0.870  0.773 | 
+Epoch 53 - acc: | 0.870  0.773 | 
+Epoch 54 - acc: | 0.870  0.773 | 
+Epoch 55 - acc: | 0.890  0.773 | 
+Epoch 56 - acc: | 0.890  0.773 | 
+Epoch 57 - acc: | 0.890  0.773 | 
+Epoch 58 - acc: | 0.890  0.773 | 
+Epoch 59 - acc: | 0.890  0.773 | 
+Epoch 60 - acc: | 0.890  0.773 | 
+Epoch 61 - acc: | 0.890  0.773 | 
+Epoch 62 - acc: | 0.890  0.773 | 
+Epoch 63 - acc: | 0.890  0.773 | 
+Epoch 64 - acc: | 0.890  0.773 | 
+Epoch 65 - acc: | 0.890  0.773 | 
+Epoch 66 - acc: | 0.890  0.773 | 
+Epoch 67 - acc: | 0.890  0.773 | 
+Epoch 68 - acc: | 0.890  0.773 | 
+Epoch 69 - acc: | 0.890  0.773 | 
+Epoch 70 - acc: | 0.890  0.773 | 
+Epoch 71 - acc: | 0.890  0.773 | 
+Epoch 72 - acc: | 0.890  0.773 | 
+Epoch 73 - acc: | 0.890  0.773 | 
+Epoch 74 - acc: | 0.890  0.773 | 
+Epoch 75 - acc: | 0.890  0.773 | 
+Epoch 76 - acc: | 0.890  0.773 | 
+Epoch 77 - acc: | 0.890  0.773 | 
+Epoch 78 - acc: | 0.890  0.773 | 
+Epoch 79 - acc: | 0.890  0.773 | 
+Epoch 80 - acc: | 0.890  0.773 | 
+Epoch 81 - acc: | 0.890  0.773 | 
+Epoch 82 - acc: | 0.890  0.773 | 
+Epoch 83 - acc: | 0.890  0.773 | 
+Epoch 84 - acc: | 0.890  0.773 | 
+Epoch 85 - acc: | 0.890  0.773 | 
+Epoch 86 - acc: | 0.890  0.773 | 
+Epoch 87 - acc: | 0.890  0.773 | 
+Epoch 88 - acc: | 0.890  0.773 | 
+Epoch 89 - acc: | 0.890  0.773 | 
+Epoch 90 - acc: | 0.890  0.773 | 
+Epoch 91 - acc: | 0.890  0.773 | 
+Epoch 92 - acc: | 0.890  0.773 | 
+Epoch 93 - acc: | 0.890  0.773 | 
+Epoch 94 - acc: | 0.890  0.773 | 
+Epoch 95 - acc: | 0.890  0.773 | 
+Epoch 96 - acc: | 0.890  0.773 | 
+Epoch 97 - acc: | 0.890  0.773 | 
+Epoch 98 - acc: | 0.890  0.773 | 
+Epoch 99 - acc: | 0.890  0.773 | 
+Epoch 100 - acc: | 0.890  0.773 | 
+108.356103 seconds (247.62 M allocations: 59.257 GiB, 10.02% gc time, 60.86% compilation time)
 </pre>
 </div>
 </div>
@@ -15459,11 +15111,13 @@ Epoch 10 - acc: | 0.790  0.727 |
 
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[11]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[10]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="n">sum</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">Flux</span><span class="o">.</span><span class="n">params</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+<div class=" highlight hl-julia"><pre><span></span><span class="n">sum</span><span class="p">(</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">Flux</span><span class="o">.</span><span class="n">params</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
 </pre></div>
 
      </div>
@@ -15472,14 +15126,14 @@ Epoch 10 - acc: | 0.790  0.727 |
 </div>
 
 <div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[11]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
 
 
 
@@ -15496,11 +15150,13 @@ Epoch 10 - acc: | 0.790  0.727 |
 
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[13]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[11]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="n">printtree</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">htrunc</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">vtrunc</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+<div class=" highlight hl-julia"><pre><span></span><span class="n">printtree</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">htrunc</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span><span class="w"> </span><span class="n">vtrunc</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
 </pre></div>
 
      </div>
@@ -15509,62 +15165,62 @@ Epoch 10 - acc: | 0.790  0.727 |
 </div>
 
 <div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
 <div class="jp-OutputArea-child">
-
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
 <pre><span class="ansi-blue-fg">SumNode</span>
-<span class="ansi-blue-fg">  ├── </span><span class="ansi-red-fg">ProductNode</span>
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">  ├─── lumo: </span>_Categorical
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">  ├─── inda: </span>_Categorical
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">  ├─── logp: </span>_Categorical
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">  ├─── ind1: </span>_Categorical
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">  ╰── atoms: </span><span class="ansi-green-fg">SetNode</span>
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">  ├── c: </span>_Poisson
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">  ╰── f: </span><span class="ansi-yellow-fg">ProductNode</span>
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  ├──── element: </span>_Categorical
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  ├────── bonds: </span><span class="ansi-cyan-fg">SetNode</span>
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">  ├── c: </span>_Poisson
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">  ╰── f: </span><span class="ansi-magenta-fg">ProductNode</span>
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  ├──── element: </span>_Categorical
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  ├── bond_type: </span>_Categorical
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  ├───── charge: </span><span class="ansi-blue-fg">SumNode</span>
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  │              </span><span class="ansi-blue-fg">  ├── </span>_MvNormal
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  │              </span><span class="ansi-blue-fg">  ╰── </span>_MvNormal
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  ╰── atom_type: </span>_Categorical
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  ├───── charge: </span><span class="ansi-cyan-fg">SumNode</span>
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">  ├── </span>_MvNormal
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">  ╰── </span>_MvNormal
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  ╰── atom_type: </span>_Categorical
-<span class="ansi-blue-fg">  ╰── </span><span class="ansi-red-fg">ProductNode</span>
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">  ├─── lumo: </span>_Categorical
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">  ├─── inda: </span>_Categorical
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">  ├─── logp: </span>_Categorical
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">  ├─── ind1: </span>_Categorical
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">  ╰── atoms: </span><span class="ansi-green-fg">SetNode</span>
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">  ├── c: </span>_Poisson
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">  ╰── f: </span><span class="ansi-yellow-fg">ProductNode</span>
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  ├──── element: </span>_Categorical
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  ├────── bonds: </span><span class="ansi-cyan-fg">SetNode</span>
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">  ├── c: </span>_Poisson
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">  ╰── f: </span><span class="ansi-magenta-fg">ProductNode</span>
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  ├──── element: </span>_Categorical
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  ├── bond_type: </span>_Categorical
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  ├───── charge: </span><span class="ansi-blue-fg">SumNode</span>
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  │              </span><span class="ansi-blue-fg">  ├── </span>_MvNormal
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  │              </span><span class="ansi-blue-fg">  ╰── </span>_MvNormal
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  ╰── atom_type: </span>_Categorical
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  ├───── charge: </span><span class="ansi-cyan-fg">SumNode</span>
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">  ├── </span>_MvNormal
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │              </span><span class="ansi-cyan-fg">  ╰── </span>_MvNormal
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">             </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  ╰── atom_type: </span>_Categorical
+<span class="ansi-blue-fg">  ├── </span><span class="ansi-red-fg">ProductNode (:lumo, :inda, :logp, :ind1, :atoms)</span>
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">  ├── </span>Categorical
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">  ├── </span>Categorical
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">  ├── </span>Categorical
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">  ├── </span>Categorical
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">  ╰── </span><span class="ansi-green-fg">SetNode</span>
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  ├── c: </span>Poisson
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  ╰── f: </span><span class="ansi-yellow-fg">ProductNode (:element, :bonds, :charge, :atom_type)</span>
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  ├── </span>Categorical
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  ├── </span><span class="ansi-cyan-fg">SetNode</span>
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">  ├── c: </span>Poisson
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">  ╰── f: </span><span class="ansi-magenta-fg">ProductNode (:element, :bond_type, :charge, :atom_type)</span>
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  ├── </span>Categorical
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  ├── </span>Categorical
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  ├── </span><span class="ansi-blue-fg">SumNode</span>
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  │   </span><span class="ansi-blue-fg">  ├── </span>MvNormal
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  │   </span><span class="ansi-blue-fg">  ╰── </span>MvNormal
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  ╰── </span>Categorical
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  ├── </span><span class="ansi-cyan-fg">SumNode</span>
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">  ├── </span>MvNormal
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">  ╰── </span>MvNormal
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  ╰── </span>Categorical
+<span class="ansi-blue-fg">  ╰── </span><span class="ansi-red-fg">ProductNode (:lumo, :inda, :logp, :ind1, :atoms)</span>
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">  ├── </span>Categorical
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">  ├── </span>Categorical
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">  ├── </span>Categorical
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">  ├── </span>Categorical
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">  ╰── </span><span class="ansi-green-fg">SetNode</span>
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  ├── c: </span>Poisson
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">  ╰── f: </span><span class="ansi-yellow-fg">ProductNode (:element, :bonds, :charge, :atom_type)</span>
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  ├── </span>Categorical
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  ├── </span><span class="ansi-cyan-fg">SetNode</span>
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">  ├── c: </span>Poisson
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">  ╰── f: </span><span class="ansi-magenta-fg">ProductNode (:element, :bond_type, :charge, :atom_type)</span>
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  ├── </span>Categorical
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  ├── </span>Categorical
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  ├── </span><span class="ansi-blue-fg">SumNode</span>
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  │   </span><span class="ansi-blue-fg">  ├── </span>MvNormal
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  │   </span><span class="ansi-blue-fg">  ╰── </span>MvNormal
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">         </span><span class="ansi-magenta-fg">  ╰── </span>Categorical
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  ├── </span><span class="ansi-cyan-fg">SumNode</span>
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">  ├── </span>MvNormal
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  │   </span><span class="ansi-cyan-fg">  ╰── </span>MvNormal
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">      </span><span class="ansi-green-fg">         </span><span class="ansi-yellow-fg">  ╰── </span>Categorical
 </pre>
 </div>
 </div>
@@ -15575,6 +15231,8 @@ Epoch 10 - acc: | 0.790  0.727 |
 
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[&nbsp;]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
