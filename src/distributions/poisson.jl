@@ -1,3 +1,29 @@
+"""
+    Poisson{T} <: Distribution
+
+Implement multivariate (as well as univariate) Poisson distribution as `Distribution`. The distribution is parametrized 
+by a vector of real numbers `lograte`, whose elementwise `exp` function represents rate parameters. 
+
+# Examples
+```julia
+julia> Random.seed!(0);
+
+julia> m = Poisson(4)
+Poisson
+
+julia> x = rand(m, 2)
+4×2 Mill.ArrayNode{Matrix{Int64}, Nothing}:
+  7   7
+  2   2
+ 14  10
+  0   1
+
+1×2 Matrix{Float64}:
+ -8.99603  -7.00497
+
+```
+
+"""
 
 struct Poisson{T <: AbstractFloat} <: Distribution
     lograte::Vector{T}

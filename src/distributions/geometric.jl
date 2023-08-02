@@ -1,3 +1,32 @@
+"""
+    Geometric{T} <: Distribution
+
+Implement multivariate (as well as univariate) geometric distribution as `Distribution`. The distribution is parametrized 
+by a vector of real numbers `logitp`, whose elementwise `sigmoid`` represent success probabilities parameters. 
+The distribution represents vectorized version of product of independent univariate geometric
+distributions.
+
+# Examples
+```julia
+julia> Random.seed!(0);
+
+julia> m = Geometric(4)
+Geometric
+
+julia> x = rand(m, 2)
+4×2 Mill.ArrayNode{SparseArrays.SparseMatrixCSC{Int64, Int64}, Nothing}:
+ 5  1
+ ⋅  ⋅
+ ⋅  1
+ ⋅  ⋅
+
+julia> logpdf(m, x)
+1×2 Matrix{Float32}:
+ -6.24837  -4.15767
+```
+
+"""
+
 
 mutable struct Geometric{T} <: Distribution
     logitp::Array{T, 1}

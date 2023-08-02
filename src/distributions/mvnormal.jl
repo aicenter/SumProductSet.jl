@@ -1,4 +1,32 @@
+"""
+    MvNormal{T, N} <: Distribution
 
+Implement Normal distribution as `Distribution`. The distribution is parametrized 
+by a vector `b`, `N`-dimensional array `A` and regularization factor `r`. 
+Mean vector `μ` and convariance matrix `Σ` can be computed as follows:
+- `μ = -A⁻¹ b`,
+- `Σ = A⁻ᵀ A⁻¹`.
+Regularization factor `r` regularizes `A`, not `Σ`.
+
+# Examples
+```julia
+julia> Random.seed!(0);
+
+julia> m = MvNormal(3)
+MvNormal
+
+julia> x = rand(m, 2)
+3×2 Mill.ArrayNode{Matrix{Float32}, Nothing}:
+  1.4966074   0.2833557
+ -0.0646999  -0.4232424
+ -2.1708894  -2.0524693
+
+julia> logpdf(m, x)
+1×2 Matrix{Float32}:
+ -4.65435  -3.42413
+```
+
+"""
 struct MvNormal{T, N} <: Distribution
     b::Array{T, 1}
     A::Array{T, N}

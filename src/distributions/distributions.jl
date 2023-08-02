@@ -1,4 +1,7 @@
-
+"""
+    Distribution <: AbstractModelNode
+Supertype for any conventional distributions defined in `SumProductSet.jl`.
+"""
 abstract type Distribution <: AbstractModelNode end
 
 include("poisson.jl")

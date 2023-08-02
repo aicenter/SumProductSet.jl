@@ -1,4 +1,29 @@
+"""
+    Categorical{T} <: Distribution
 
+Implement univariate categorical distribution as `Distribution`. The distribution is parametrized 
+by a vector of real numbers `logp`, whose `softmax`` represent event/category probabilities parameters.
+
+# Examples
+```julia
+julia> Random.seed!(0);
+
+julia> m = Categorical(4)
+Categorical
+
+julia> x = rand(m, 2)
+4×2 Mill.ArrayNode{OneHotArrays.OneHotMatrix{UInt32, 4, Vector{UInt32}}, Nothing}:
+ ⋅  1
+ 1  ⋅
+ ⋅  ⋅
+ ⋅  ⋅
+
+julia> logpdf(m, x)
+1×2 Matrix{Float32}:
+ -1.38629  -1.38629
+```
+
+"""
 struct Categorical{T} <: Distribution
     logp::Array{T, 1}
 end
