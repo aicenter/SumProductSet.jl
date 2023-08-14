@@ -1,6 +1,7 @@
 module SumProductSet
 
 using Flux
+using ChainRulesCore
 using NNlib
 using StatsBase
 using HierarchicalUtils
