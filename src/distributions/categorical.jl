@@ -25,7 +25,7 @@ julia> logpdf(m, x)
 
 """
 struct Categorical{T} <: Distribution
-    logp::Array{T, 1}
+    logp::Vector{T}
 end
 
 Flux.@functor Categorical

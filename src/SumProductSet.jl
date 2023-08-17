@@ -21,9 +21,7 @@ include("modelnodes/modelnode.jl")
 include("distributions/distributions.jl")
 include("modelbuilders.jl")
 include("util.jl")
-include("leaves/vae.jl")
 include("reflectinmodel.jl")
-include("loss.jl")
 
 export ZIPoisson, Poisson, Geometric, Categorical, MvNormal, MvNormalParams
 export logpdf, logjnt

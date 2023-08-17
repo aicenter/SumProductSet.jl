@@ -29,7 +29,7 @@ julia> logpdf(m, x)
 
 
 mutable struct Geometric{T} <: Distribution
-    logitp::Array{T, 1}
+    logitp::Vector{T}
 end
 
 Flux.@functor Geometric
