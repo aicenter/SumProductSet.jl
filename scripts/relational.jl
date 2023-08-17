@@ -7,7 +7,7 @@
 #SBATCH --exclude=n33
 #SBATCH --out=/home/papezmil/logs/%x-%j.out
 #=
-srun julia nodewise_spsn.jl --n $SLURM_ARRAY_TASK_ID --m $1
+srun julia relational.jl --n $SLURM_ARRAY_TASK_ID --m $1
 exit
 # =#
 using DrWatson
@@ -142,7 +142,7 @@ function commands()
     s = ArgParseSettings()
     @add_arg_table s begin
         ("--n"; arg_type = Int; default=1);
-        ("--m"; arg_type = Int; default=5);
+        ("--m"; arg_type = Int; default=1);
     end
     parse_args(s)
 end
