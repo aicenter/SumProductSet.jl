@@ -41,21 +41,18 @@ Geometric(n::Int; dtype::Type{<:Real}=Float32) = Geometric(dtype(0.01)*randn(dty
 ####
 
 # TODO: precompute logsigmoid.(m.logitp)
-function _logpdf(m::Geometric{T}, x::SparseMatrixCSC) where {T<:Real}
+
+
+function _logpdf_geometric(logitp::Vector{T}, x::SparseMatrixCSC) where {T<:Real}
     ndims, nobs = size(x)
-    # linit = sum(logsigmoid, m.logitp)
-    linit = T(0e0)
-    @inbounds for r in eachindex(m.logitp)
-        linit += logsigmoid(m.logitp[r])
+    linit = T(0e0)    # linit = sum(logsigmoid, m.logitp)
+    @inbounds for r in eachindex(logitp)
+        linit += logsigmoid(logitp[r])
     end
     l = fill(linit, 1, nobs)
 
-    # I, J, K = findnz(x)
-    # @inbounds for n in 1:length(I)
-    #     l[J[n]] += K[n]*logsigmoid(-m.logitp[I[n]]) 
-    # end
-    for (i, j, k) in zip(findnz(x)...)
-        l[j] += k*logsigmoid(-m.logitp[i]) 
+    @inbounds for (i, j, k) in zip(findnz(x)...)
+        l[j] += k*logsigmoid(-logitp[i]) 
     end
     l
 end
@@ -69,25 +66,20 @@ function _logpdf_back(logitp::Vector{T}, x, Δy) where {T<:Real}
         Δp[r] *= sigmoid(-logitp[r])
     end
 
-    for (i, j, k) in zip(findnz(x)...)
+    @inbounds for (i, j, k) in zip(findnz(x)...)
         Δp[i] -= k*sigmoid(logitp[i])*Δy[j] 
     end
-    Δp
+    Δp, NoTangent()
 end
 
-function ChainRulesCore.rrule(::typeof(_logpdf), m::Geometric{T}, x::SparseMatrixCSC) where {T<:Real}
-    y = _logpdf(m, x)
-    p = m.logitp
-    function _logpdf_pullback(Δy)
-        Δlogitp = _logpdf_back(p, x, Δy)
-        Δm = Tangent{Geometric{T}}(; logitp=Δlogitp)
-        return NoTangent(), Δm, NoTangent()
-    end
+function ChainRulesCore.rrule(::typeof(_logpdf_geometric), logitp::Vector{T}, x::SparseMatrixCSC) where {T<:Real}
+    y = _logpdf_geometric(logitp, x)
+    _logpdf_pullback = Δy -> (NoTangent(), _logpdf_back(logitp, x, Δy)...)
     return y, _logpdf_pullback
 end
 
-logpdf(m::Geometric, x::SparseMatrixCSC) = _logpdf(m, x) 
-logpdf(m::Geometric, k::NGramMatrix) = _logpdf(m, SparseMatrixCSC(k))
+logpdf(m::Geometric, x::SparseMatrixCSC) = _logpdf_geometric(m.logitp, x)
+logpdf(m::Geometric, x::NGramMatrix) = logpdf(m, SparseMatrixCSC(x))
 
 # _logpdf(m::Geometric, k::SparseMatrixCSC) = k .*logsigmoid.(-m.logitp) .+ logsigmoid.(m.logitp)
 
