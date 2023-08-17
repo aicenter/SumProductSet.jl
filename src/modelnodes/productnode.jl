@@ -1,5 +1,5 @@
 """
-    ProductNode{T<:Union{Tuple, NamedTuple}, U<:NTuple{N, UnitRange{Int}} where N} <: AbstractModelNode
+ProductNode{C<:AbstractModelNode, D<:Union{UnitRange{Int}, Vector{T}, T} where {T<:Symbol}} <: AbstractModelNode
 
 Implement a product of independent random variables as `AbstractModelNode`.
 
@@ -10,96 +10,74 @@ julia> x = Mill.ProductNode(a=Mill.ArrayNode([0. 1; 2 3]), b=Mill.ArrayNode([4. 
 ProductNode  # 2 obs, 16 bytes
   ├── a: ArrayNode(2×2 Array with Float64 elements)  # 2 obs, 80 bytes
   ╰── b: ArrayNode(2×2 Array with Float64 elements)  # 2 obs, 80 bytes
-julia> m = ProductNode(a=_MvNormal(2), b=_MvNormal(2))
-ProductNode
-  ├── a: _MvNormal
-  ╰── b: _MvNormal
+julia> m = ProductNode(a=MvNormal(2), b=MvNormal(2))
+ProductNode (:a, :b)
+  ├── MvNormal
+  ╰── MvNormal
 julia> logpdf(m, x)
-2-element Vector{Float64}:
- -36.468016427033014
- -51.62330239036811
+1×2 Matrix{Float64}:
+ -36.468  -51.6233
 ```
 """
-struct ProductNode{T<:Union{Tuple, NamedTuple}, U<:NTuple{N, UnitRange{Int}} where N} <: AbstractModelNode
-    components::T
-    dimensions::U
+struct ProductNode{C<:AbstractModelNode, D<:Union{UnitRange{Int}, Vector{T}, T} where {T<:Symbol}} <: AbstractModelNode
+    components::Vector{C}
+    dimensions::Vector{D}
 end
 
 Flux.@functor ProductNode
 Flux.trainable(m::ProductNode) = (m.components,)
 
-Base.length(m::ProductNode) = m.dimensions[end].stop
-Base.getindex(m::ProductNode, i...) = getindex(m.components, i...)
-Base.haskey(m::ProductNode{<:NamedTuple}, k::Symbol) = haskey(m.components, k)
-
-"""
-    ProductNode(ps::Union{Tuple, NamedTuple})
-
-Construct ProductNode with `ps` independent random variables. `ps` should be 
-iterable (`Tuple` or `NamedTuple`) of one or more `AbstractModelNode`s.
-
-# Examples
-```jldoctest
-julia> ProductNode(_MvNormal(3), _Categotical(10))
-ProductNode
-  ├── _MvNormal
-  ╰── _Categorical
-julia> ProductNode(a=_MvNormal(3), b=_Categorical(10))
-ProductNode
-  ├── a: _MvNormal
-  ╰── b: _Categorical
-```
-
-"""
-function ProductNode(ps::Union{Tuple, NamedTuple})
-    dimensions = Vector{UnitRange{Int}}(undef, length(ps))
-    start = 1
-    for (i, p) in enumerate(ps)
-        l = length(p)
-        dimensions[i] = start:start + l - 1
-        start += l
-    end
-    ProductNode(ps, tuple(dimensions...))
-end
-ProductNode(ms::AbstractModelNode...) = ProductNode(ms)
+ProductNode(c::AbstractModelNode, d::Union{UnitRange{Int}, Vector{T}, T}) where {T<:Symbol} = ProductNode([c], [d]) # best to get rid of this in future
 ProductNode(;ms...) = ProductNode(NamedTuple(ms))
+ProductNode(ms::NamedTuple) = ProductNode(collect(values(ms)), collect(keys(ms)))
 
-####
-#	Functions for calculating full likelihood
-####
-
-function logpdf(m::ProductNode{<:Tuple}, x::AbstractMatrix{<:Real})
-    mapreduce((c, d)->logpdf(c, x[d, :]), +, m.components, m.dimensions)
-end
-logpdf(m::ProductNode, x::Mill.ArrayNode) = logpdf(m, x.data)
-
-function logpdf(m::ProductNode{<:Tuple}, x::Mill.ProductNode{<:Tuple})
-    mapreduce((c, i)->logpdf(c, x.data[i]), +, m.components, 1:length(m.components))
-end
-
-function logpdf(m::ProductNode{<:NamedTuple{KM}}, x::Mill.ProductNode{<:NamedTuple{KD}}) where {KM, KD}
-    mapreduce(k->logpdf(m.components[k], x.data[k]), +, KM)
+function ProductNode(components::Vector{<:AbstractModelNode})
+  dimensions = Vector{UnitRange{Int}}(undef, length(components))
+  start = 1
+  for (i, c) in enumerate(components)
+      l = length(c)
+      dimensions[i] = start:start + l - 1
+      start += l
+  end
+  ProductNode(components, collect(dimensions))
 end
 
 ####
-#	Functions for sampling the model
+#	  Functions for calculating the likelihood
 ####
 
-_reshape(x::Vector{Int}) = reshape(x, 1, :)  # specially for 1D distributions
-_reshape(x) = x
+logpdf(m::ProductNode, x::AbstractMatrix)   = mapreduce((c, d)->logpdf(c, x[d, :]), +, m.components, m.dimensions)
+logpdf(m::ProductNode, x::Mill.ProductNode) = mapreduce((c, d)->logpdf(c, x[d]),    +, m.components, m.dimensions)
+logpdf(m::ProductNode, x::Mill.ArrayNode)   = logpdf(m, x.data)
 
-Base.rand(m::ProductNode, n::Int) = mapreduce(c->rand(c, n) |> _reshape, vcat, m.components)
+####
+#	  Functions for generating random samples
+####
+
+Base.rand(m::ProductNode{C, D}, n::Int) where {C<:AbstractModelNode, D<:Union{Vector{T}, T} where {T<:Symbol}} = 
+  map((c, k)->k=>rand(c, n), m.components, m.dimensions) |> NamedTuple |> Mill.ProductNode
+Base.rand(m::ProductNode{C, D}, n::Int) where {C<:AbstractModelNode, D<:UnitRange{Int}} = 
+  Mill.ArrayNode(reduce(vcat, map(c->rand(c, n).data, m.components)))
+  # mapreduce(c->rand(c, n), vcat, m.components)
+  # reduce(sparse_vcat, map(c->rand(c, n), m.components))
+
 Base.rand(m::ProductNode) = rand(m, 1)
 
-function Base.rand(m::ProductNode{<:NamedTuple{KM}}, n::Int) where KM
-    Mill.ProductNode( map( k-> rand(m[k], n) |> _reshape, KM) )
-end
-
 ####
-#	Functions for making the library compatible with HierarchicalUtils
+#	  Functions for making the library compatible with HierarchicalUtils
 ####
 
 HierarchicalUtils.NodeType(::Type{<:ProductNode}) = InnerNode()
-HierarchicalUtils.nodeshow(io::IO, ::ProductNode) = print(io, "ProductNode")
-HierarchicalUtils.printchildren(node::ProductNode) = node.components
+HierarchicalUtils.nodeshow(io::IO, m::ProductNode) = (print(io, "ProductNode "), _print(io, m.dimensions))
+HierarchicalUtils.printchildren(m::ProductNode) = m.components
 
+_print(io, ::Vector{T}) where {T<:UnitRange{Int}} = print(io, "")
+_print(io, x::Vector{T}) where {T<:Symbol} = print(io, "$(Tuple(x))")
+_print(io, x::Vector{T}) where {T<:Vector{<:Symbol}} = foreach(d->print(io, "$(d) "), x)
+
+
+####
+#	  Utilities
+####
+
+Base.length(m::ProductNode) = sum(length, m.components)

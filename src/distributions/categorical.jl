@@ -1,30 +1,65 @@
+"""
+    Categorical{T} <: Distribution
 
-mutable struct _Categorical{T} <: _Distribution{T}
-    logp::Array{T, 1}
+Implement univariate categorical distribution as `Distribution`. The distribution is parametrized 
+by a vector of real numbers `logp`, whose `softmax`` represent event/category probabilities parameters.
+
+# Examples
+```julia
+julia> Random.seed!(0);
+
+julia> m = Categorical(4)
+Categorical
+
+julia> x = rand(m, 2)
+4×2 Mill.ArrayNode{OneHotArrays.OneHotMatrix{UInt32, 4, Vector{UInt32}}, Nothing}:
+ ⋅  1
+ 1  ⋅
+ ⋅  ⋅
+ ⋅  ⋅
+
+julia> logpdf(m, x)
+1×2 Matrix{Float32}:
+ -1.38629  -1.38629
+```
+
+"""
+struct Categorical{T} <: Distribution
+    logp::Vector{T}
 end
 
-Flux.@functor _Categorical
+Flux.@functor Categorical
 
-_Categorical(n::Int; dtype::Type{<:Real}=Float64) = _Categorical(ones(dtype, n))
+Categorical(n::Integer; dtype::Type{<:Real}=Float32) = Categorical(ones(dtype, n))
 
+####
+#   Functions for calculating the likelihood
+####
 
-Base.length(m::_Categorical) = 1
-Base.rand(m::_Categorical) = sample(Weights(softmax(m.logp)))
-Base.rand(m::_Categorical, ns::Int...) = sample(1:length(m.logp), Weights(softmax(m.logp)), ns)
-
-function logpdf(m::_Categorical, x::Union{Int, Vector{Int}})
+function logpdf(m::Categorical, x::Union{Int, Vector{Int}})
     logp = logsoftmax(m.logp)
     logp[x]
 end
 
+logpdf(m::Categorical, x::Matrix)         = logpdf(m, vec(x))
+logpdf(m::Categorical, x::Real)           = logpdf(m, convert.(Int64, x))
+logpdf(m::Categorical, x::Vector{<:Real}) = logpdf(m, convert.(Int64, x))
+logpdf(m::Categorical, x::Matrix{<:Real}) = logpdf(m, convert.(Int64, vec(x)))
 
-# only for `x` inputs whose elements can be losslesly converted to integers
-# TODO: Add args check
-logpdf(m::_Categorical, x::Matrix) = logpdf(m, vec(x)) 
-logpdf(m::_Categorical, x::Union{Float64, Vector{Float64}}) = logpdf(m, convert.(Int64, x))
-logpdf(m::_Categorical, x::Union{Matrix{Float64}}) = logpdf(m, convert.(Int64, vec(x)))
+_logpdf(m::Categorical, x::OneHotArray)   =                    reshape(logsoftmax(m.logp), 1, :)  * x
+_logpdf(m::Categorical, x::MaybeHotArray) = PostImputingMatrix(reshape(logsoftmax(m.logp), 1, :)) * x
 
-_oh_logpdf(m::_Categorical, x::Flux.OneHotArray) = reshape(logsoftmax(m.logp), 1, :) * x
-logpdf(m::_Categorical, x::Flux.OneHotMatrix) = vec(_oh_logpdf(m, x))
-logpdf(m::_Categorical, x::Flux.OneHotVector) = _oh_logpdf(m, x)[]
+logpdf(m::Categorical, x::Union{OneHotArray, MaybeHotArray}) = _logpdf(m, x)
 
+####
+#   Functions for generating random samples
+####
+
+Base.rand(m::Categorical, n::Int) = (r=1:length(m.logp); Flux.onehotbatch(sample(r, Weights(softmax(m.logp)), n), r) |> Mill.ArrayNode)
+Base.rand(m::Categorical) = rand(m, 1)
+
+####
+#   Utilities
+####
+
+Base.length(m::Categorical) = 1

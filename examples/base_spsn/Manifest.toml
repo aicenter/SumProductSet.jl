@@ -635,9 +635,9 @@ version = "4.14.0"
 
 [[deps.LLVMExtra_jll]]
 deps = ["Artifacts", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg", "TOML"]
-git-tree-sha1 = "771bfe376249626d3ca12bcd58ba243d3f961576"
+git-tree-sha1 = "7718cf44439c676bc0ec66a87099f41015a522d6"
 uuid = "dad2f222-ce93-54a1-a47d-0025e8a3acab"
-version = "0.0.16+0"
+version = "0.0.16+2"
 
 [[deps.LZO_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1264,7 +1264,7 @@ deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
 uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 
 [[deps.SumProductSet]]
-deps = ["Flux", "HierarchicalUtils", "LinearAlgebra", "Mill", "NNlib", "PoissonRandom", "Random", "SpecialFunctions", "StatsBase"]
+deps = ["Flux", "HierarchicalUtils", "LinearAlgebra", "Mill", "NNlib", "OneHotArrays", "PoissonRandom", "Random", "SparseArrays", "SpecialFunctions", "StatsBase"]
 path = "../.."
 uuid = "d0366596-3556-49ae-b3ef-851ab4ad1106"
 version = "0.0.0"

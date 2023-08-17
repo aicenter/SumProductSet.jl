@@ -6,30 +6,31 @@ using StatsBase
 using HierarchicalUtils
 using PoissonRandom
 using LinearAlgebra
+using OneHotArrays
+using SparseArrays
 using Random
-import Mill
+using Mill
+using SpecialFunctions
 
-function logfactorial(x::Real)
-    # sum(log.(collect(2:x)); init=zero(Float64))
-    sum(log.(collect(2:x)))
-end
+const Maybe{T} = Union{T, Missing}
+const MaybeHotArray{T} = Union{MaybeHotVector{T}, MaybeHotMatrix{T}}
+const Code = Union{AbstractVector{<:Integer}, Base.CodeUnits}
+const Sequence = Union{AbstractString, Code}
 
 include("modelnodes/modelnode.jl")
 include("distributions/distributions.jl")
 include("modelbuilders.jl")
 include("util.jl")
-include("leaves/vae.jl")
 include("reflectinmodel.jl")
-include("loss.jl")
 
-export _Poisson, _Categorical, _MvNormal, _MvNormalParams
+export ZIPoisson, Poisson, Geometric, Categorical, MvNormal, MvNormalParams
 export logpdf, logjnt
 export SumNode, ProductNode, SetNode
 export rand, randwithlabel
-export setmixture, gmm, sharedsetmixture
+export setmixture, gmm, sharedsetmixture, spn
 
 export reflectinmodel
-export ul_loss, sl_loss, ssl_loss
+export em_loss, ce_loss, ssl_loss
 
 export VAE, Encoder, Decoder, SplitLayer, elbo, reconstruct_loss
 

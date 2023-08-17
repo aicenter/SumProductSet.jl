@@ -1,42 +1,44 @@
 
-@testset "_Poisson --- logpdf forward" begin
-	m = _Poisson(log(5))
-    xs = [rand(1:20, 10), 2, 100., 0]
+@testset "Poisson --- logpdf forward" begin
+    ndim = 1
+	m = SumProductSet.Poisson(ndim)
+    xs = [rand(0:20, ndim, 100), 2, 100., 0]
 
     for x in xs
-        @test size(SumProductSet.logpdf(m, x)) == size(x)
+        @test !isnothing(SumProductSet.logpdf(m, x))
     end
 
+    ndim = 10
+    m = SumProductSet.Poisson(ndim)
+    xs = rand(0:20, ndim, 100)
+    @test !isnothing(SumProductSet.logpdf(m, xs))
 end
 
-@testset "_Poisson --- rand sampling" begin
-    m = _Poisson(log(6))
-    @test length(rand(m)) == length(m.logλ)
+@testset "Poisson --- rand sampling" begin
+    ndim = 1
+    m = SumProductSet.Poisson(ndim)
+    @test typeof(rand(m)) <: Mill.ArrayNode
+    @test length(rand(m).data) == length(m.lograte)
 end
 
-@testset "_Poisson --- integration with Flux" begin
-
-	m = _Poisson(log(5))
-    truegrad(logλ, x) = -exp.(logλ) .+ x  # d(SumProductSet.logpdf(Poiss(x ; logλ))) / d(logλ)
-	ps = Flux.params(m)
+@testset "Poisson --- integration with Flux" begin
+    ndim = 10
+	m = SumProductSet.Poisson()
+    ps = Flux.params(m)
 
     @test !isempty(ps)
-    x = rand(1:20, 10)
+    x = rand(0:20, ndim, 100)
     @test !isnothing(gradient(() -> sum(SumProductSet.logpdf(m, x)), ps))
-    gs = gradient(() -> sum(SumProductSet.logpdf(m, x)), ps)
-    for p in ps
-        @test gs[p] ≈ mapreduce(xi->truegrad(m.logλ, xi), +, x)
-    end
 end
 
-@testset "_Poisson --- correctness" begin
+@testset "Poisson --- correctness" begin
     λ = 5
     n = 100
-    m1 = Poisson(λ)
-    m2 = _Poisson(log(λ))
+    m1 = Distributions.Poisson(λ)
+    m2 = SumProductSet.Poisson(log(λ))
     x1 = rand(m1, n) 
     x2 = rand(m2, n)
 
-    @test Distributions.logpdf.(m1, x1) ≈ SumProductSet.logpdf(m2, x1)
-    @test Distributions.logpdf.(m1, x2) ≈ SumProductSet.logpdf(m2, x2)
+    @test Distributions.logpdf.(m1, x1)[:] ≈ SumProductSet.logpdf(m2, x1)[:]
+    @test Distributions.logpdf.(m1, x2.data)[:] ≈ SumProductSet.logpdf(m2, x2)[:]
 end

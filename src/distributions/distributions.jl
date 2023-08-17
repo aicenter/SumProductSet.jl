@@ -1,20 +1,24 @@
+"""
+    Distribution <: AbstractModelNode
+Supertype for any conventional distributions defined in `SumProductSet.jl`.
+"""
+abstract type Distribution <: AbstractModelNode end
 
-abstract type _Distribution{T} <: AbstractModelNode end
-
-###
-#   concrete distributions import
-###
 include("poisson.jl")
 include("mvnormal.jl")
 include("categorical.jl")
-
-###
-#  compatibility with Mill
-###
-logpdf(d::_Distribution, x::Mill.ArrayNode) = logpdf(d, x.data)
+include("geometric.jl")
+include("zipoisson.jl")
 
 ####
-#  compatibility with HierarchicalUtils
+#	Functions for making the library compatible with Mill
 ####
-HierarchicalUtils.nodeshow(io::IO, ::T) where {T<:_Distribution} = print(io, "$(nameof(T))")
-HierarchicalUtils.NodeType(::Type{<:_Distribution}) = LeafNode()
+
+logpdf(d::Distribution, x::Mill.ArrayNode) = logpdf(d, x.data)
+
+####
+#	Functions for making the library compatible with HierarchicalUtils
+####
+
+HierarchicalUtils.nodeshow(io::IO, ::T) where {T<:Distribution} = print(io, "$(nameof(T))")
+HierarchicalUtils.NodeType(::Type{<:Distribution}) = LeafNode()

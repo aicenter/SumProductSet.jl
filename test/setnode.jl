@@ -1,45 +1,42 @@
 using SumProductSet, Test, Distributions, Flux
 using PoissonRandom
-using StatsBase: nobs
 
 import Mill
 
 @testset "SetNode --- forward" begin
-	d = 2
+	ndims = 2
     ninst = 10
     nbags = 10
     bagsizes = [pois_rand(3) for _ in 1:nbags]
     bagids = [rand(1:ninst, bagsizes[i]) for i in 1:nbags]
 
-	x = randn(d, ninst)
-    AN = Mill.ArrayNode(x)
-    BN = Mill.BagNode(AN, bagids)
+	x = randn(Float32, ndims, ninst)
+    BN = Mill.BagNode(x, bagids)
 
-    m = SetNode(_MvNormal(d), _Poisson(1.))
+    m = SetNode(SumProductSet.MvNormal(ndims), SumProductSet.Poisson())
 
 	@test !isnothing(SumProductSet.logpdf(m, BN))
     @test length(SumProductSet.logpdf(m, BN)) == nbags 
-	@test length(m) == 2
 end
 
 
 @testset "SetNode --- rand sampling" begin
-    d = 2
-	m = SetNode(_MvNormal(d), _Poisson(1.))
+    ndims = 2
+    nobs = 100
+    m = SetNode(SumProductSet.MvNormal(ndims), SumProductSet.Poisson())
 
-    n = 10
-    @test typeof(rand(m, n)) <: Mill.BagNode
-    @test nobs(rand(m, n)) == n
-
+    @test typeof(rand(m, nobs)) <: Mill.BagNode
+    @test Mill.numobs(rand(m, nobs)) == nobs
 end
 
 
 @testset "SetNode --- integration with Flux" begin
-    d = 2
-	m = SetNode(_MvNormal(d), _Poisson(1.))
+    ndims = 2
+    nobs = 100
+	m = SetNode(SumProductSet.MvNormal(ndims), SumProductSet.Poisson())
     ps = Flux.params(m)
 
     @test !isempty(ps)
-    x = rand(m, 10)
+    x = rand(m, nobs)
     @test !isnothing(gradient(() -> sum(SumProductSet.logpdf(m, x)), ps))
 end

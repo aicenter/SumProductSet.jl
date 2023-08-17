@@ -3,7 +3,7 @@
 <head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>toy_graph_clustering</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>karate_clustering</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 
 
 
@@ -36,6 +36,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .highlight .m { color: var(--jp-mirror-editor-number-color) } /* Literal.Number */
 .highlight .s { color: var(--jp-mirror-editor-string-color) } /* Literal.String */
 .highlight .ow { color: var(--jp-mirror-editor-operator-color); font-weight: bold } /* Operator.Word */
+.highlight .pm { color: var(--jp-mirror-editor-punctuation-color) } /* Punctuation.Marker */
 .highlight .w { color: var(--jp-mirror-editor-variable-color) } /* Text.Whitespace */
 .highlight .mb { color: var(--jp-mirror-editor-number-color) } /* Literal.Number.Bin */
 .highlight .mf { color: var(--jp-mirror-editor-number-color) } /* Literal.Number.Float */
@@ -14454,25 +14455,102 @@ all of MD as it is not optimized for dense, information rich UIs.
 </style>
 
 <style type="text/css">
-a.anchor-link {
-   display: none;
+/* Force rendering true colors when outputing to pdf */
+* {
+  -webkit-print-color-adjust: exact;
 }
-.highlight  {
-    margin: 0.4em;
+
+/* Misc */
+a.anchor-link {
+  display: none;
 }
 
 /* Input area styling */
 .jp-InputArea {
-    overflow: hidden;
+  overflow: hidden;
 }
 
 .jp-InputArea-editor {
-    overflow: hidden;
+  overflow: hidden;
+}
+
+.CodeMirror.cm-s-jupyter .highlight pre {
+/* weird, but --jp-code-padding defined to be 5px but 4px horizontal padding is hardcoded for pre.CodeMirror-line */
+  padding: var(--jp-code-padding) 4px;
+  margin: 0;
+
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+
+}
+
+.jp-OutputArea-output pre {
+  line-height: inherit;
+  font-family: inherit;
+}
+
+.jp-RenderedText pre {
+  color: var(--jp-content-font-color1);
+  font-size: var(--jp-code-font-size);
+}
+
+/* Using table instead of flexbox so that we can use break-inside property */
+/* CSS rules under this comment should not be required anymore after we move to the JupyterLab 4.0 CSS */
+
+
+.jp-CodeCell.jp-mod-outputsScrolled .jp-OutputArea-prompt {
+  min-width: calc(
+    var(--jp-cell-prompt-width) - var(--jp-private-cell-scrolling-output-offset)
+  );
+}
+
+.jp-OutputArea-child {
+  display: table;
+  width: 100%;
+}
+
+.jp-OutputPrompt {
+  display: table-cell;
+  vertical-align: top;
+  min-width: var(--jp-cell-prompt-width);
+}
+
+body[data-format='mobile'] .jp-OutputPrompt {
+  display: table-row;
+}
+
+.jp-OutputArea-output {
+  display: table-cell;
+  width: 100%;
+}
+
+body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
+  display: table-row;
+}
+
+.jp-OutputArea-output.jp-OutputArea-executeResult {
+  width: 100%;
+}
+
+/* Hiding the collapser by default */
+.jp-Collapser {
+  display: none;
+}
+
+@page {
+    margin: 0.5in; /* Margin for each printed piece of paper */
 }
 
 @media print {
-  body {
-    margin: 0;
+  .jp-Cell-inputWrapper,
+  .jp-Cell-outputWrapper {
+    display: block;
+  }
+
+  .jp-OutputArea-child {
+    break-inside: avoid-page;
   }
 }
 </style>
@@ -14499,12 +14577,12 @@ a.anchor-link {
                 },
                 displayAlign: 'center',
                 CommonHTML: {
-                    linebreaks: { 
-                    automatic: true 
+                    linebreaks: {
+                    automatic: true
                     }
                 }
             });
-        
+
             MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
         }
     }
@@ -14514,17 +14592,19 @@ a.anchor-link {
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
 <div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="k">using</span> <span class="n">DrWatson</span>
-<span class="nd">@quickactivate</span> 
+<div class=" highlight hl-julia"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="n">DrWatson</span>
+<span class="nd">@quickactivate</span><span class="w"> </span>
 
-<span class="k">using</span> <span class="n">Flux</span><span class="p">,</span> <span class="n">Graphs</span><span class="p">,</span> <span class="n">Statistics</span><span class="p">,</span> <span class="n">Plots</span><span class="p">,</span> <span class="n">Zygote</span><span class="p">,</span> <span class="n">GraphPlot</span>
-<span class="k">using</span> <span class="n">Cairo</span><span class="p">,</span> <span class="n">Compose</span>
-<span class="k">using</span> <span class="n">SumProductSet</span>
-<span class="k">import</span> <span class="n">Mill</span>
+<span class="k">using</span><span class="w"> </span><span class="n">Flux</span><span class="p">,</span><span class="w"> </span><span class="n">Graphs</span><span class="p">,</span><span class="w"> </span><span class="n">Statistics</span><span class="p">,</span><span class="w"> </span><span class="n">Plots</span><span class="p">,</span><span class="w"> </span><span class="n">GraphPlot</span>
+<span class="k">using</span><span class="w"> </span><span class="n">Cairo</span><span class="p">,</span><span class="w"> </span><span class="n">Compose</span>
+<span class="k">using</span><span class="w"> </span><span class="n">SumProductSet</span>
+<span class="k">import</span><span class="w"> </span><span class="n">Mill</span>
 </pre></div>
 
      </div>
@@ -14533,32 +14613,28 @@ a.anchor-link {
 </div>
 
 </div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="Graph-clustering-on-simple-toy-graph">Graph clustering on simple toy graph<a class="anchor-link" href="#Graph-clustering-on-simple-toy-graph">&#182;</a></h1>
+<h1 id="Graph-clustering-on-Karate-graph-data">Graph clustering on Karate graph data<a class="anchor-link" href="#Graph-clustering-on-Karate-graph-data">&#182;</a></h1>
+</div>
+</div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[2]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="n">g</span> <span class="o">=</span> <span class="n">SimpleGraph</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">e</span> <span class="k">in</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
-        <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
-        <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
-        <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
-
-        <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
-        <span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
-        <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span>
-        <span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span> <span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
-    <span class="p">]</span>
-    <span class="n">add_edge!</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">e</span><span class="o">...</span><span class="p">)</span>
-<span class="k">end</span>
-<span class="n">vs</span> <span class="o">=</span> <span class="n">collect</span><span class="p">(</span><span class="n">vertices</span><span class="p">(</span><span class="n">g</span><span class="p">))</span>
-<span class="n">x</span> <span class="o">=</span> <span class="n">Flux</span><span class="o">.</span><span class="n">onehotbatch</span><span class="p">(</span><span class="n">vs</span><span class="p">,</span> <span class="n">vs</span><span class="p">)</span>
-<span class="n">ds_train</span> <span class="o">=</span> <span class="n">Mill</span><span class="o">.</span><span class="n">BagNode</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">g</span><span class="o">.</span><span class="n">fadjlist</span><span class="p">)</span>
+<div class=" highlight hl-julia"><pre><span></span><span class="n">g</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">smallgraph</span><span class="p">(</span><span class="ss">:karate</span><span class="p">)</span>
+<span class="n">vs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">collect</span><span class="p">(</span><span class="n">vertices</span><span class="p">(</span><span class="n">g</span><span class="p">))</span>
+<span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SumProductSet</span><span class="o">.</span><span class="n">onehotbatch</span><span class="p">(</span><span class="n">vs</span><span class="p">,</span><span class="w"> </span><span class="n">vs</span><span class="p">)</span>
+<span class="n">ds_train</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Mill</span><span class="o">.</span><span class="n">BagNode</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="o">.</span><span class="n">fadjlist</span><span class="p">)</span>
 </pre></div>
 
      </div>
@@ -14567,12 +14643,12 @@ a.anchor-link {
 </div>
 
 <div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
 
@@ -14580,8 +14656,8 @@ a.anchor-link {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre><span class="ansi-blue-fg">BagNode</span><span class="ansi-black-intense-fg"> 	# 11 obs, 896 bytes</span>
-<span class="ansi-blue-fg">  └── </span>ArrayNode(11×11 OneHotArray with Bool elements)<span class="ansi-black-intense-fg"> 	# 11 obs, 100 bytes</span></pre>
+<pre><span class="ansi-blue-fg">BagNode</span><span class="ansi-black-intense-fg"> 	# 34 obs, 2.883 KiB</span>
+<span class="ansi-blue-fg">  └── </span>ArrayNode(34×34 OneHotArray with Bool elements)<span class="ansi-black-intense-fg"> 	# 34 obs, 208 bytes</span></pre>
 </div>
 
 </div>
@@ -14592,11 +14668,16 @@ a.anchor-link {
 
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[3]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="n">m</span> <span class="o">=</span> <span class="n">reflectinmodel</span><span class="p">(</span><span class="n">ds_train</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span>
+<div class=" highlight hl-julia"><pre><span></span><span class="n">dir_rand</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">d</span><span class="o">-&gt;</span><span class="p">(</span><span class="w"> </span><span class="n">r</span><span class="o">=</span><span class="n">rand</span><span class="p">(</span><span class="n">d</span><span class="p">);</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">./</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+<span class="n">f_cat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">d</span><span class="o">-&gt;</span><span class="n">Categorical</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="p">(</span><span class="n">dir_rand</span><span class="p">(</span><span class="n">d</span><span class="p">)))</span>
+<span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">reflectinmodel</span><span class="p">(</span><span class="n">ds_train</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="n">dist_card</span><span class="o">=</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">Poisson</span><span class="p">(</span><span class="n">log</span><span class="p">(</span><span class="mi">4</span><span class="p">)),</span><span class="w"> </span><span class="n">dist_disc</span><span class="o">=</span><span class="n">f_cat</span><span class="p">)</span>
+<span class="n">m</span>
 </pre></div>
 
      </div>
@@ -14605,12 +14686,12 @@ a.anchor-link {
 </div>
 
 <div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
 
@@ -14620,11 +14701,11 @@ a.anchor-link {
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
 <pre><span class="ansi-blue-fg">SumNode</span>
 <span class="ansi-blue-fg">  ├── </span><span class="ansi-red-fg">SetNode</span>
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">  ├── c: </span>_Poisson
-<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">  └── f: </span>_Categorical
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">  ├── c: </span>Poisson
+<span class="ansi-blue-fg">  │   </span><span class="ansi-red-fg">  └── f: </span>Categorical
 <span class="ansi-blue-fg">  └── </span><span class="ansi-red-fg">SetNode</span>
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">  ├── c: </span>_Poisson
-<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">  └── f: </span>_Categorical
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">  ├── c: </span>Poisson
+<span class="ansi-blue-fg">      </span><span class="ansi-red-fg">  └── f: </span>Categorical
 </pre>
 </div>
 
@@ -14636,20 +14717,20 @@ a.anchor-link {
 
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[4]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="k">function</span> <span class="n">train!</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">x</span><span class="p">;</span> <span class="n">niter</span><span class="o">::</span><span class="kt">Int</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="n">ADAM</span><span class="p">(</span><span class="mf">1.</span><span class="p">))</span>
-    <span class="n">ps</span> <span class="o">=</span> <span class="n">Flux</span><span class="o">.</span><span class="n">params</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<div class=" highlight hl-julia"><pre><span></span><span class="k">function</span><span class="w"> </span><span class="n">train!</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">;</span><span class="w"> </span><span class="n">niter</span><span class="o">::</span><span class="kt">Int</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span><span class="n">opt</span><span class="o">=</span><span class="n">ADAM</span><span class="p">(</span><span class="mf">1.</span><span class="p">))</span>
+<span class="w">    </span><span class="n">ps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Flux</span><span class="o">.</span><span class="n">params</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="mi">1</span><span class="o">:</span><span class="n">niter</span>
-        <span class="n">gs</span> <span class="o">=</span> <span class="n">gradient</span><span class="p">(()</span> <span class="o">-&gt;</span> <span class="n">SumProductSet</span><span class="o">.</span><span class="n">ul_loss</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="n">ps</span><span class="p">)</span>
-        <span class="n">Flux</span><span class="o">.</span><span class="n">Optimise</span><span class="o">.</span><span class="n">update!</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">ps</span><span class="p">,</span> <span class="n">gs</span><span class="p">)</span>
-    <span class="k">end</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mi">1</span><span class="o">:</span><span class="n">niter</span>
+<span class="w">        </span><span class="n">gs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gradient</span><span class="p">(()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">SumProductSet</span><span class="o">.</span><span class="n">em_loss</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">),</span><span class="w"> </span><span class="n">ps</span><span class="p">)</span>
+<span class="w">        </span><span class="n">Flux</span><span class="o">.</span><span class="n">Optimise</span><span class="o">.</span><span class="n">update!</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span><span class="w"> </span><span class="n">ps</span><span class="p">,</span><span class="w"> </span><span class="n">gs</span><span class="p">)</span>
+<span class="w">    </span><span class="k">end</span>
 <span class="k">end</span>
-
-<span class="n">predict</span> <span class="o">=</span> <span class="n">x</span><span class="o">-&gt;</span><span class="n">mapslices</span><span class="p">(</span><span class="n">argmax</span><span class="p">,</span> <span class="n">logjnt</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="n">dims</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="o">:</span><span class="p">]</span>
 </pre></div>
 
      </div>
@@ -14658,12 +14739,12 @@ a.anchor-link {
 </div>
 
 <div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[4]:</div>
 
@@ -14671,7 +14752,7 @@ a.anchor-link {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>#4 (generic function with 1 method)</pre>
+<pre>train! (generic function with 1 method)</pre>
 </div>
 
 </div>
@@ -14682,16 +14763,15 @@ a.anchor-link {
 
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="n">train!</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">ds_train</span><span class="p">;</span> <span class="n">opt</span><span class="o">=</span><span class="n">ADAM</span><span class="p">(</span><span class="mf">0.02</span><span class="p">))</span>
-<span class="n">clusters</span> <span class="o">=</span> <span class="n">predict</span><span class="p">(</span><span class="n">ds_train</span><span class="p">)</span>
-<span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="sa">colorant</span><span class="s">&quot;yellow&quot;</span><span class="p">,</span> <span class="sa">colorant</span><span class="s">&quot;red&quot;</span><span class="p">]</span>
-<span class="n">nodelabel</span> <span class="o">=</span> <span class="mi">1</span><span class="o">:</span><span class="n">nv</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
-<span class="n">layout</span><span class="o">=</span><span class="n">_</span><span class="o">-&gt;</span><span class="n">spring_layout</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
-<span class="n">gplot</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">nodefillc</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">clusters</span><span class="p">],</span> <span class="n">layout</span><span class="o">=</span><span class="n">layout</span><span class="p">,</span> <span class="n">nodelabel</span><span class="o">=</span><span class="n">nodelabel</span><span class="p">)</span>
+<div class=" highlight hl-julia"><pre><span></span><span class="n">colors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="sa">colorant</span><span class="s">&quot;yellow&quot;</span><span class="p">,</span><span class="w"> </span><span class="sa">colorant</span><span class="s">&quot;red&quot;</span><span class="p">]</span>
+<span class="n">nodelabel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="o">:</span><span class="n">nv</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="n">layout</span><span class="o">=</span><span class="n">_</span><span class="o">-&gt;</span><span class="n">spring_layout</span><span class="p">(</span><span class="n">g</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span>
 </pre></div>
 
      </div>
@@ -14700,14 +14780,56 @@ a.anchor-link {
 </div>
 
 <div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
+
+
+
+
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>#10 (generic function with 1 method)</pre>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[6]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-julia"><pre><span></span><span class="n">train!</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">ds_train</span><span class="p">;</span><span class="w"> </span><span class="n">opt</span><span class="o">=</span><span class="n">ADAM</span><span class="p">(</span><span class="mf">1.</span><span class="p">),</span><span class="w"> </span><span class="n">niter</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="n">predict</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="o">-&gt;</span><span class="n">mapslices</span><span class="p">(</span><span class="n">argmax</span><span class="p">,</span><span class="w"> </span><span class="n">logjnt</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">),</span><span class="w"> </span><span class="n">dims</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="o">:</span><span class="p">]</span><span class="w"> </span>
+<span class="n">clusters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">ds_train</span><span class="p">);</span>
+<span class="n">gplot</span><span class="p">(</span><span class="n">g</span><span class="p">,</span><span class="w"> </span><span class="n">nodefillc</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">clusters</span><span class="p">],</span><span class="w"> </span><span class="n">layout</span><span class="o">=</span><span class="n">layout</span><span class="p">,</span><span class="w"> </span><span class="n">nodelabel</span><span class="o">=</span><span class="n">nodelabel</span><span class="p">)</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
 
 
 
@@ -14728,158 +14850,519 @@ a.anchor-link {
     <path d="M0,0 L15,3.5 L0,7 z" stroke="context-stroke" fill="context-stroke"/>
   </marker>
 </defs>
-<g stroke-width="0.9" fill="#000000" fill-opacity="0.000" stroke="#D3D3D3" id="img-ae0a2007-1">
-  <g transform="translate(23.92,8.97)">
-    <path fill="none" d="M5.49,0.35 L-5.49,-0.35 " class="primitive"/>
+<g stroke-width="0.51" fill="#000000" fill-opacity="0.000" stroke="#D3D3D3" id="img-ae0a2007-1">
+  <g transform="translate(59.2,43.49)">
+    <path fill="none" d="M-2.86,-1.08 L2.86,1.08 " class="primitive"/>
   </g>
-  <g transform="translate(34.89,20.64)">
-    <path fill="none" d="M-0.76,-7.91 L0.76,7.91 " class="primitive"/>
+  <g transform="translate(66.83,48.15)">
+    <path fill="none" d="M-10.68,-5.53 L10.68,5.53 " class="primitive"/>
   </g>
-  <g transform="translate(34.92,16.22)">
-    <path fill="none" d="M-0.58,-3.51 L0.58,3.51 " class="primitive"/>
+  <g transform="translate(56.72,50.16)">
+    <path fill="none" d="M-2.08,-6.85 L2.08,6.85 " class="primitive"/>
   </g>
-  <g transform="translate(25.01,15.59)">
-    <path fill="none" d="M-7.76,-5.12 L7.76,5.12 " class="primitive"/>
+  <g transform="translate(44.82,34.32)">
+    <path fill="none" d="M7.6,5.92 L-7.6,-5.92 " class="primitive"/>
   </g>
-  <g transform="translate(12.89,15.95)">
-    <path fill="none" d="M0.65,-4.49 L-0.65,4.49 " class="primitive"/>
+  <g transform="translate(41.94,28.49)">
+    <path fill="none" d="M10.78,11.58 L-10.78,-11.58 " class="primitive"/>
   </g>
-  <g transform="translate(35.99,27.26)">
-    <path fill="none" d="M-0.01,1.27 L0.01,-1.27 " class="primitive"/>
+  <g transform="translate(40.12,33.73)">
+    <path fill="none" d="M12.02,6.72 L-12.02,-6.72 " class="primitive"/>
   </g>
-  <g transform="translate(23.87,27.62)">
-    <path fill="none" d="M8.07,2.71 L-8.07,-2.71 " class="primitive"/>
+  <g transform="translate(58.75,53.88)">
+    <path fill="none" d="M-3.99,-10.59 L3.99,10.59 " class="primitive"/>
   </g>
-  <g transform="translate(48.59,38)">
-    <path fill="none" d="M-9.01,-4.51 L9.01,4.51 " class="primitive"/>
+  <g transform="translate(68.2,38.62)">
+    <path fill="none" d="M-11.66,2.43 L11.66,-2.43 " class="primitive"/>
   </g>
-  <g transform="translate(23.9,23.21)">
-    <path fill="none" d="M7.68,-0.23 L-7.68,0.23 " class="primitive"/>
+  <g transform="translate(47.01,27.75)">
+    <path fill="none" d="M6.24,12.14 L-6.24,-12.14 " class="primitive"/>
   </g>
-  <g transform="translate(48.62,33.58)">
-    <path fill="none" d="M-9.77,-8.32 L9.77,8.32 " class="primitive"/>
+  <g transform="translate(41.61,48.06)">
+    <path fill="none" d="M10.46,-5.44 L-10.46,5.44 " class="primitive"/>
   </g>
-  <g transform="translate(78.09,56.15)">
-    <path fill="none" d="M-13.71,-9.62 L13.71,9.62 " class="primitive"/>
+  <g transform="translate(47.87,55.16)">
+    <path fill="none" d="M5.46,-11.9 L-5.46,11.9 " class="primitive"/>
   </g>
-  <g transform="translate(120.56,77.7)">
-    <path fill="none" d="M2.64,-1.75 L-2.64,1.75 " class="primitive"/>
+  <g transform="translate(63.79,43.45)">
+    <path fill="none" d="M-7.24,-1.41 L7.24,1.41 " class="primitive"/>
   </g>
-  <g transform="translate(110.69,70.89)">
-    <path fill="none" d="M11.45,2.11 L-11.45,-2.11 " class="primitive"/>
+  <g transform="translate(49.15,43.53)">
+    <path fill="none" d="M2.76,-1.09 L-2.76,1.09 " class="primitive"/>
   </g>
-  <g transform="translate(128.04,82.73)">
-    <path fill="none" d="M-1.04,-5.82 L1.04,5.82 " class="primitive"/>
+  <g transform="translate(63.81,35.03)">
+    <path fill="none" d="M-7.86,5.3 L7.86,-5.3 " class="primitive"/>
   </g>
-  <g transform="translate(104.81,74.79)">
-    <path fill="none" d="M6.68,4.61 L-6.68,-4.61 " class="primitive"/>
+  <g transform="translate(51.5,52.68)">
+    <path fill="none" d="M2.2,-9.36 L-2.2,9.36 " class="primitive"/>
   </g>
-  <g transform="translate(122.16,86.63)">
-    <path fill="none" d="M-4.26,-2.87 L4.26,2.87 " class="primitive"/>
+  <g transform="translate(71.69,51.11)">
+    <path fill="none" d="M-15.58,-8.46 L15.58,8.46 " class="primitive"/>
   </g>
-  <g transform="translate(109.68,85.99)">
-    <path fill="none" d="M2.21,-1.95 L-2.21,1.95 " class="primitive"/>
+  <g transform="translate(71.92,50.07)">
+    <path fill="none" d="M-5.71,-3.49 L5.71,3.49 " class="primitive"/>
   </g>
-  <g transform="translate(99.82,79.19)">
-    <path fill="none" d="M-3.56,-8.2 L3.56,8.2 " class="primitive"/>
+  <g transform="translate(61.81,52.09)">
+    <path fill="none" d="M1.84,-4.94 L-1.84,4.94 " class="primitive"/>
   </g>
-  <g transform="translate(117.16,91.03)">
-    <path fill="none" d="M8.04,0.41 L-8.04,-0.41 " class="primitive"/>
+  <g transform="translate(63.84,55.81)">
+    <path fill="none" d="M0.37,-8.6 L-0.37,8.6 " class="primitive"/>
+  </g>
+  <g transform="translate(68.88,45.37)">
+    <path fill="none" d="M-2.06,0.02 L2.06,-0.02 " class="primitive"/>
+  </g>
+  <g transform="translate(54.24,45.46)">
+    <path fill="none" d="M7.53,-0.03 L-7.53,0.03 " class="primitive"/>
+  </g>
+  <g transform="translate(68.9,36.96)">
+    <path fill="none" d="M-3.7,6.79 L3.7,-6.79 " class="primitive"/>
+  </g>
+  <g transform="translate(56.59,54.61)">
+    <path fill="none" d="M6.41,-7.66 L-6.41,7.66 " class="primitive"/>
+  </g>
+  <g transform="translate(75.57,36.07)">
+    <path fill="none" d="M-9.64,7.99 L9.64,-7.99 " class="primitive"/>
+  </g>
+  <g transform="translate(69.44,56.74)">
+    <path fill="none" d="M7.67,-1.53 L-7.67,1.53 " class="primitive"/>
+  </g>
+  <g transform="translate(71.47,60.46)">
+    <path fill="none" d="M6.29,-4.47 L-6.29,4.47 " class="primitive"/>
+  </g>
+  <g transform="translate(80.91,45.21)">
+    <path fill="none" d="M-1.12,7.75 L1.12,-7.75 " class="primitive"/>
+  </g>
+  <g transform="translate(86.16,63.25)">
+    <path fill="none" d="M-5.4,-6.95 L5.4,6.95 " class="primitive"/>
+  </g>
+  <g transform="translate(76.5,50.03)">
+    <path fill="none" d="M1.99,3.08 L-1.99,-3.08 " class="primitive"/>
+  </g>
+  <g transform="translate(90.78,61.93)">
+    <path fill="none" d="M-9.37,-6 L9.37,6 " class="primitive"/>
+  </g>
+  <g transform="translate(87.93,55.17)">
+    <path fill="none" d="M-5.86,-0.3 L5.86,0.3 " class="primitive"/>
+  </g>
+  <g transform="translate(91.66,44.05)">
+    <path fill="none" d="M-10.54,9.28 L10.54,-9.28 " class="primitive"/>
+  </g>
+  <g transform="translate(61.36,62.48)">
+    <path fill="none" d="M-1.12,-2.06 L1.12,2.06 " class="primitive"/>
+  </g>
+  <g transform="translate(50.48,63.75)">
+    <path fill="none" d="M6.88,-3.89 L-6.88,3.89 " class="primitive"/>
+  </g>
+  <g transform="translate(66.4,52.04)">
+    <path fill="none" d="M-5.56,5.28 L5.56,-5.28 " class="primitive"/>
+  </g>
+  <g transform="translate(30.82,26.49)">
+    <path fill="none" d="M2.21,0.28 L-2.21,-0.28 " class="primitive"/>
+  </g>
+  <g transform="translate(37.72,20.5)">
+    <path fill="none" d="M-1.62,4.83 L1.62,-4.83 " class="primitive"/>
+  </g>
+  <g transform="translate(27.94,20.65)">
+    <path fill="none" d="M1.22,-3.51 L-1.22,3.51 " class="primitive"/>
+  </g>
+  <g transform="translate(34.84,14.67)">
+    <path fill="none" d="M-2.6,0.38 L2.6,-0.38 " class="primitive"/>
+  </g>
+  <g transform="translate(20.78,12.12)">
+    <path fill="none" d="M6.75,2.47 L-6.75,-2.47 " class="primitive"/>
+  </g>
+  <g transform="translate(18.95,17.36)">
+    <path fill="none" d="M5.88,7 L-5.88,-7 " class="primitive"/>
+  </g>
+  <g transform="translate(84.57,31.21)">
+    <path fill="none" d="M-1.43,2.8 L1.43,-2.8 " class="primitive"/>
+  </g>
+  <g transform="translate(93.03,34.53)">
+    <path fill="none" d="M-8.25,0.89 L8.25,-0.89 " class="primitive"/>
+  </g>
+  <g transform="translate(92.03,37.19)">
+    <path fill="none" d="M-7.27,-1.13 L7.27,1.13 " class="primitive"/>
+  </g>
+  <g transform="translate(97.27,55.23)">
+    <path fill="none" d="M-4.01,14.78 L4.01,-14.78 " class="primitive"/>
+  </g>
+  <g transform="translate(87.61,42.01)">
+    <path fill="none" d="M-11.75,2.75 L11.75,-2.75 " class="primitive"/>
+  </g>
+  <g transform="translate(112.37,40.51)">
+    <path fill="none" d="M6.96,5.78 L-6.96,-5.78 " class="primitive"/>
+  </g>
+  <g transform="translate(111.37,43.17)">
+    <path fill="none" d="M7.5,3.49 L-7.5,-3.49 " class="primitive"/>
+  </g>
+  <g transform="translate(110.06,24.08)">
+    <path fill="none" d="M5.2,-7.68 L-5.2,7.68 " class="primitive"/>
+  </g>
+  <g transform="translate(109.06,26.74)">
+    <path fill="none" d="M6.29,-10.32 L-6.29,10.32 " class="primitive"/>
+  </g>
+  <g transform="translate(111.55,28.82)">
+    <path fill="none" d="M5.83,-3.42 L-5.83,3.42 " class="primitive"/>
+  </g>
+  <g transform="translate(110.55,31.48)">
+    <path fill="none" d="M7.14,-5.86 L-7.14,5.86 " class="primitive"/>
+  </g>
+  <g transform="translate(87.63,33.6)">
+    <path fill="none" d="M-11.88,-4.29 L11.88,4.29 " class="primitive"/>
+  </g>
+  <g transform="translate(103.37,20.85)">
+    <path fill="none" d="M-0.35,-10.73 L0.35,10.73 " class="primitive"/>
+  </g>
+  <g transform="translate(102.36,23.52)">
+    <path fill="none" d="M0.53,-13.4 L-0.53,13.4 " class="primitive"/>
+  </g>
+  <g transform="translate(107.11,21.24)">
+    <path fill="none" d="M2.85,-10.38 L-2.85,10.38 " class="primitive"/>
+  </g>
+  <g transform="translate(106.1,23.91)">
+    <path fill="none" d="M3.82,-13.04 L-3.82,13.04 " class="primitive"/>
+  </g>
+  <g transform="translate(111.32,70.91)">
+    <path fill="none" d="M1.94,-10.63 L-1.94,10.63 " class="primitive"/>
+  </g>
+  <g transform="translate(107.8,63.81)">
+    <path fill="none" d="M4.24,-3.9 L-4.24,3.9 " class="primitive"/>
+  </g>
+  <g transform="translate(116.54,48.57)">
+    <path fill="none" d="M-2.44,8.18 L2.44,-8.18 " class="primitive"/>
+  </g>
+  <g transform="translate(108.68,45.94)">
+    <path fill="none" d="M4.23,10.84 L-4.23,-10.84 " class="primitive"/>
+  </g>
+  <g transform="translate(107.67,48.6)">
+    <path fill="none" d="M4.92,8.26 L-4.92,-8.26 " class="primitive"/>
+  </g>
+  <g transform="translate(104.74,87.49)">
+    <path fill="none" d="M-2.83,2.74 L2.83,-2.74 " class="primitive"/>
+  </g>
+  <g transform="translate(101.22,80.4)">
+    <path fill="none" d="M-0.67,9.49 L0.67,-9.49 " class="primitive"/>
+  </g>
+  <g transform="translate(94.84,76.16)">
+    <path fill="none" d="M4.95,13.77 L-4.95,-13.77 " class="primitive"/>
+  </g>
+  <g transform="translate(99.16,71.98)">
+    <path fill="none" d="M8.56,9.81 L-8.56,-9.81 " class="primitive"/>
+  </g>
+  <g transform="translate(124.57,36.45)">
+    <path fill="none" d="M2.91,-1.26 L-2.91,1.26 " class="primitive"/>
+  </g>
+  <g transform="translate(115.7,36.48)">
+    <path fill="none" d="M11.47,-1.83 L-11.47,1.83 " class="primitive"/>
+  </g>
+  <g transform="translate(101.89,53.91)">
+    <path fill="none" d="M0.11,13.43 L-0.11,-13.43 " class="primitive"/>
+  </g>
+  <g transform="translate(92.79,58.13)">
+    <path fill="none" d="M1.75,-1.25 L-1.75,1.25 " class="primitive"/>
+  </g>
+  <g transform="translate(99.04,47.15)">
+    <path fill="none" d="M-2.17,6.71 L2.17,-6.71 " class="primitive"/>
+  </g>
+  <g transform="translate(111.64,36.01)">
+    <path fill="none" d="M5.58,1.87 L-5.58,-1.87 " class="primitive"/>
+  </g>
+  <g transform="translate(110.63,38.67)">
+    <path fill="none" d="M6.34,-0.02 L-6.34,0.02 " class="primitive"/>
+  </g>
+  <g transform="translate(95.32,30.05)">
+    <path fill="none" d="M-6.25,-2.46 L6.25,2.46 " class="primitive"/>
+  </g>
+  <g transform="translate(94.31,32.71)">
+    <path fill="none" d="M-5.78,-4.64 L5.78,4.64 " class="primitive"/>
+  </g>
+  <g transform="translate(96.52,47.01)">
+    <path fill="none" d="M-6.36,11.97 L6.36,-11.97 " class="primitive"/>
+  </g>
+  <g transform="translate(95.52,49.68)">
+    <path fill="none" d="M-5.3,9.32 L5.3,-9.32 " class="primitive"/>
+  </g>
+  <g transform="translate(102.77,36.04)">
+    <path fill="none" d="M0.35,-0.94 L-0.35,0.94 " class="primitive"/>
   </g>
 </g>
-<g stroke-width="0.9" stroke="#D3D3D3" id="img-ae0a2007-2">
+<g stroke-width="0.51" stroke="#D3D3D3" id="img-ae0a2007-2">
 </g>
 <g font-size="4" stroke="#000000" stroke-opacity="0.000" fill="#000000" id="img-ae0a2007-3">
 </g>
 <g stroke-width="0" stroke="#000000" stroke-opacity="0.000" id="img-ae0a2007-4">
-  <g transform="translate(33.83,9.6)" fill="#FF0000">
-    <circle cx="0" cy="0" r="4.26" class="primitive"/>
+  <g transform="translate(54.11,41.56)" fill="#FF0000">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
   </g>
-  <g transform="translate(14,8.33)" fill="#FF0000">
-    <circle cx="0" cy="0" r="4.26" class="primitive"/>
+  <g transform="translate(64.29,45.42)" fill="#FF0000">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
   </g>
-  <g transform="translate(35.96,31.67)" fill="#FF0000">
-    <circle cx="0" cy="0" r="4.26" class="primitive"/>
+  <g transform="translate(79.54,54.73)" fill="#FF0000">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
   </g>
-  <g transform="translate(36.01,22.85)" fill="#FF0000">
-    <circle cx="0" cy="0" r="4.26" class="primitive"/>
+  <g transform="translate(59.33,58.75)" fill="#FF0000">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
   </g>
-  <g transform="translate(11.79,23.57)" fill="#FF0000">
-    <circle cx="0" cy="0" r="4.26" class="primitive"/>
+  <g transform="translate(35.52,27.07)" fill="#FF0000">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
   </g>
-  <g transform="translate(61.23,44.32)" fill="#FF0000">
-    <circle cx="0" cy="0" r="4.26" class="primitive"/>
+  <g transform="translate(29.77,15.41)" fill="#FF0000">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
   </g>
-  <g transform="translate(126.44,73.8)" fill="#FFFF00">
-    <circle cx="0" cy="0" r="4.26" class="primitive"/>
+  <g transform="translate(26.12,25.9)" fill="#FF0000">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
   </g>
-  <g transform="translate(114.67,81.59)" fill="#FFFF00">
-    <circle cx="0" cy="0" r="4.26" class="primitive"/>
+  <g transform="translate(63.4,66.2)" fill="#FF0000">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
   </g>
-  <g transform="translate(94.95,67.99)" fill="#FFFF00">
-    <circle cx="0" cy="0" r="4.26" class="primitive"/>
+  <g transform="translate(82.29,35.68)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
   </g>
-  <g transform="translate(129.64,91.67)" fill="#FFFF00">
-    <circle cx="0" cy="0" r="4.26" class="primitive"/>
+  <g transform="translate(92.78,71.76)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
   </g>
-  <g transform="translate(104.69,90.4)" fill="#FFFF00">
-    <circle cx="0" cy="0" r="4.26" class="primitive"/>
+  <g transform="translate(39.91,13.93)" fill="#FF0000">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(29.11,54.56)" fill="#FF0000">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(41.63,68.75)" fill="#FF0000">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(73.46,45.33)" fill="#FF0000">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(120.98,47.65)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(116.35,14.79)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(11.79,8.82)" fill="#FF0000">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(44.18,45.49)" fill="#FF0000">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(119.33,24.26)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(73.5,28.5)" fill="#FF0000">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(102.96,8.33)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(48.89,63.81)" fill="#FF0000">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(110.44,9.11)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(113.58,58.5)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(100.42,91.67)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(109.05,83.31)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(129.64,34.26)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(102.02,69.13)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(96.31,55.6)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(119.5,38.65)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(86.86,26.73)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(89.27,60.65)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(103.77,33.37)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
+  </g>
+  <g transform="translate(101.76,38.7)" fill="#FFFF00">
+    <circle cx="0" cy="0" r="2.43" class="primitive"/>
   </g>
 </g>
 <g font-size="4" stroke="#000000" stroke-opacity="0.000" fill="#000000" id="img-ae0a2007-5">
-  <g transform="translate(33.83,9.6)">
+  <g transform="translate(54.11,41.56)">
     <g class="primitive">
       <text text-anchor="middle" dy="0.35em">1</text>
     </g>
   </g>
-  <g transform="translate(14,8.33)">
+  <g transform="translate(64.29,45.42)">
     <g class="primitive">
       <text text-anchor="middle" dy="0.35em">2</text>
     </g>
   </g>
-  <g transform="translate(35.96,31.67)">
+  <g transform="translate(79.54,54.73)">
     <g class="primitive">
       <text text-anchor="middle" dy="0.35em">3</text>
     </g>
   </g>
-  <g transform="translate(36.01,22.85)">
+  <g transform="translate(59.33,58.75)">
     <g class="primitive">
       <text text-anchor="middle" dy="0.35em">4</text>
     </g>
   </g>
-  <g transform="translate(11.79,23.57)">
+  <g transform="translate(35.52,27.07)">
     <g class="primitive">
       <text text-anchor="middle" dy="0.35em">5</text>
     </g>
   </g>
-  <g transform="translate(61.23,44.32)">
+  <g transform="translate(29.77,15.41)">
     <g class="primitive">
       <text text-anchor="middle" dy="0.35em">6</text>
     </g>
   </g>
-  <g transform="translate(126.44,73.8)">
+  <g transform="translate(26.12,25.9)">
     <g class="primitive">
       <text text-anchor="middle" dy="0.35em">7</text>
     </g>
   </g>
-  <g transform="translate(114.67,81.59)">
+  <g transform="translate(63.4,66.2)">
     <g class="primitive">
       <text text-anchor="middle" dy="0.35em">8</text>
     </g>
   </g>
-  <g transform="translate(94.95,67.99)">
+  <g transform="translate(82.29,35.68)">
     <g class="primitive">
       <text text-anchor="middle" dy="0.35em">9</text>
     </g>
   </g>
-  <g transform="translate(129.64,91.67)">
+  <g transform="translate(92.78,71.76)">
     <g class="primitive">
       <text text-anchor="middle" dy="0.35em">10</text>
     </g>
   </g>
-  <g transform="translate(104.69,90.4)">
+  <g transform="translate(39.91,13.93)">
     <g class="primitive">
       <text text-anchor="middle" dy="0.35em">11</text>
+    </g>
+  </g>
+  <g transform="translate(29.11,54.56)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">12</text>
+    </g>
+  </g>
+  <g transform="translate(41.63,68.75)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">13</text>
+    </g>
+  </g>
+  <g transform="translate(73.46,45.33)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">14</text>
+    </g>
+  </g>
+  <g transform="translate(120.98,47.65)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">15</text>
+    </g>
+  </g>
+  <g transform="translate(116.35,14.79)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">16</text>
+    </g>
+  </g>
+  <g transform="translate(11.79,8.82)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">17</text>
+    </g>
+  </g>
+  <g transform="translate(44.18,45.49)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">18</text>
+    </g>
+  </g>
+  <g transform="translate(119.33,24.26)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">19</text>
+    </g>
+  </g>
+  <g transform="translate(73.5,28.5)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">20</text>
+    </g>
+  </g>
+  <g transform="translate(102.96,8.33)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">21</text>
+    </g>
+  </g>
+  <g transform="translate(48.89,63.81)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">22</text>
+    </g>
+  </g>
+  <g transform="translate(110.44,9.11)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">23</text>
+    </g>
+  </g>
+  <g transform="translate(113.58,58.5)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">24</text>
+    </g>
+  </g>
+  <g transform="translate(100.42,91.67)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">25</text>
+    </g>
+  </g>
+  <g transform="translate(109.05,83.31)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">26</text>
+    </g>
+  </g>
+  <g transform="translate(129.64,34.26)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">27</text>
+    </g>
+  </g>
+  <g transform="translate(102.02,69.13)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">28</text>
+    </g>
+  </g>
+  <g transform="translate(96.31,55.6)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">29</text>
+    </g>
+  </g>
+  <g transform="translate(119.5,38.65)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">30</text>
+    </g>
+  </g>
+  <g transform="translate(86.86,26.73)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">31</text>
+    </g>
+  </g>
+  <g transform="translate(89.27,60.65)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">32</text>
+    </g>
+  </g>
+  <g transform="translate(103.77,33.37)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">33</text>
+    </g>
+  </g>
+  <g transform="translate(101.76,38.7)">
+    <g class="primitive">
+      <text text-anchor="middle" dy="0.35em">34</text>
     </g>
   </g>
 </g>
@@ -15041,6 +15524,24 @@ amount2:1-d})};a.filter.invert.toString=function(){return this()};a.filter.brigh
 
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
 <div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[8]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-julia"><pre><span></span><span class="c"># draw(PDF(&quot;karate_presentation_clustered.pdf&quot;, 16cm, 9cm), gplot(g,nodefillc=colors[clusters], layout=layout, nodelabel=nodelabel))</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[&nbsp;]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">

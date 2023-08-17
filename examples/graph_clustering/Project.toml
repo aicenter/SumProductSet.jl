@@ -1,4 +1,4 @@
-name = "GraphClustering"
+name = "graph_clustering"
 uuid = "66130901-8c6b-4793-a839-ff02c136bbcf"
 authors = ["Martin Rektoris <martin.rektoris@gmail.com>"]
 version = "0.1.0"

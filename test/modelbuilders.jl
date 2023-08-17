@@ -11,7 +11,6 @@ const sm_grid = Iterators.product(
     [:full, :diag])
 
 @testset "setmixture --- constructor" begin
-
     for (nb, ni, d, dtype, μinit, Σinit, Σtype) in sm_grid
         ps = (; dtype, μinit, Σinit, Σtype)
         m = setmixture(nb, ni, d; ps...)
@@ -21,7 +20,6 @@ const sm_grid = Iterators.product(
 end
 
 @testset "setmixture --- rand sampling" begin
-
     npts = 20 
     for (nb, ni, d, dtype, μinit, Σinit, Σtype) in sm_grid
         ps = (; dtype, μinit, Σinit, Σtype)
@@ -38,7 +36,6 @@ end
 end
 
 @testset "setmixture --- logpdf forward" begin
-
     npts = 20 
     for (nb, ni, d, dtype, μinit, Σinit, Σtype) in sm_grid
         ps = (; dtype, μinit, Σinit, Σtype)
@@ -52,14 +49,13 @@ end
 end
 
 @testset "hierarchical model -- logpdf forward" begin
-
     d1 = 9
     d2 = 11
-    pdist = () -> (_MvNormal(d1), _MvNormal(d2))
-    cdist = () -> _Poisson()
+    pdist = ()->(SumProductSet.MvNormal(d1), SumProductSet.MvNormal(d2))
+    cdist = ()-> SumProductSet.Poisson()
 
-    prodmodel = () -> ProductNode(pdist())
-    setmodel = () -> SetNode(prodmodel(), cdist())
+    prodmodel = ()->ProductNode(pdist())
+    setmodel  = ()->SetNode(prodmodel(), cdist())
 
     m = SumNode([setmodel() for _ in 1:3])
 
@@ -68,5 +64,4 @@ end
     bn = Mill.BagNode(pn, [1:5, 6:15, 16:16, 17:30])
 
     @test !isnothing(SumProductSet.logpdf(m, bn))
-
 end

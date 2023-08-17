@@ -1,23 +1,60 @@
+"""
+    Poisson{T} <: Distribution
 
-mutable struct _Poisson{T} <: _Distribution{T}
-    logλ::Array{T, 1}
-    function _Poisson(logλ::Array{T, 1}) where T
-        @assert length(logλ) == 1
-        new{T}(logλ)
-    end
+Implement multivariate (as well as univariate) Poisson distribution as `Distribution`. The distribution is parametrized 
+by a vector of real numbers `lograte`, whose elementwise `exp` function represents rate parameters. 
+
+# Examples
+```julia
+julia> Random.seed!(0);
+
+julia> m = Poisson(4)
+Poisson
+
+julia> x = rand(m, 2)
+4×2 Mill.ArrayNode{Matrix{Int64}, Nothing}:
+  7   7
+  2   2
+ 14  10
+  0   1
+
+1×2 Matrix{Float64}:
+ -8.99603  -7.00497
+
+```
+
+"""
+
+struct Poisson{T <: AbstractFloat} <: Distribution
+    lograte::Vector{T}
 end
-Flux.@functor _Poisson
 
-_Poisson(logλ::Real) = _Poisson([logλ])
-_Poisson(logλ::Integer) = _Poisson(Float64(logλ))
-_Poisson() = _Poisson(log(rand(2:5)))
+Flux.@functor Poisson
 
-Base.rand(m::_Poisson) = pois_rand(exp(m.logλ[1]))
-Base.rand(m::_Poisson, n::Int) = map(_->rand(m), 1:n)
-Base.length(m::_Poisson) = length(m.logλ)
+Poisson(lograte::AbstractFloat) = Poisson([lograte])
+Poisson(n::Int) = Poisson(Float32.(log.(rand(2:10, n))))
+Poisson() = Poisson(1)
 
-_poisson_logpdf(logλ::Real, x) = x .* logλ .- exp(logλ) .- logfactorial.(x)
+####
+#   Functions for calculating the likelihood
+####
 
-function logpdf(m::_Poisson, x::Union{Real, Vector{<:Real}})
-    mapreduce(logλ -> _poisson_logpdf(logλ, x), +, m.logλ)
-end
+_logpdf(lograte, x) = x .* lograte .- exp.(lograte) .- _logfactorial.(x)
+logpdf(m::Poisson, x::Matrix{<:Real}) = sum(_logpdf(m.lograte, x), dims=1)
+logpdf(m::Poisson, x::Vector{<:Real}) = sum(_logpdf(m.lograte, hcat(x...)), dims=1)
+logpdf(m::Poisson, x::Real) = hcat(_logpdf(m.lograte, x))  # for consistency
+logpdf(m::Poisson, x::SparseMatrixCSC) = sum(_logpdf(m.lograte, x), dims=1)
+
+####
+#   Functions for generating random samples
+####
+
+# pois_rand does not support Float64
+Base.rand(m::Poisson, n::Int) = Mill.ArrayNode([pois_rand(exp(logr)) for logr in Float64.(m.lograte), _ in 1:n])
+Base.rand(m::Poisson) = rand(m, 1)
+
+####
+#   Utilities
+####
+
+Base.length(m::Poisson) = length(m.lograte)
