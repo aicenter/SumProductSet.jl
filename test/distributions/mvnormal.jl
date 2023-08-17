@@ -45,7 +45,7 @@ end
     end
 end
 
-@testset "MvNormal correctness" begin
+@testset "MvNormal --- correctness" begin
     μ = [-3., 11]
     Σ = [5. 3; 3 7]
     n = 10000

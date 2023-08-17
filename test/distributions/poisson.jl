@@ -2,7 +2,7 @@
 @testset "Poisson --- logpdf forward" begin
     ndim = 1
 	m = SumProductSet.Poisson(ndim)
-    xs = [rand(0:20, ndim, 100), 2, 100., 0]
+    xs = [rand(0:20, ndim, 100), 2, 100, 0]
 
     for x in xs
         @test !isnothing(SumProductSet.logpdf(m, x))
