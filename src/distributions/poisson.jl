@@ -32,7 +32,7 @@ end
 Flux.@functor Poisson
 
 Poisson(lograte::AbstractFloat) = Poisson([lograte])
-Poisson(n::Int) = Poisson(Float64.(log.(rand(2:10, n)))) # pois_rand does not work with Float32
+Poisson(n::Int) = Poisson(Float32.(log.(rand(2:10, n))))
 Poisson() = Poisson(1)
 
 ####
@@ -86,7 +86,8 @@ logpdf(m::Poisson, x::Union{T, Vector{T}} where T<:Real) = logpdf(m, hcat(x...))
 #   Functions for generating random samples
 ####
 
-Base.rand(m::Poisson, n::Int) = Mill.ArrayNode([pois_rand(exp(logr)) for logr in m.lograte, _ in 1:n])
+# pois_rand does not work with Float32
+Base.rand(m::Poisson, n::Int) = Mill.ArrayNode([pois_rand(exp(Float64.(logr))) for logr in m.lograte, _ in 1:n])
 Base.rand(m::Poisson) = rand(m, 1)
 
 ####
