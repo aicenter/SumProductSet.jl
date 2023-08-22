@@ -21,18 +21,17 @@ include("modelnodes/modelnode.jl")
 include("distributions/distributions.jl")
 include("modelbuilders.jl")
 include("util.jl")
+include("loss.jl")
 include("reflectinmodel.jl")
 
-export ZIPoisson, Poisson, Geometric, Categorical, MvNormal, MvNormalParams
+export Poisson, Geometric, Categorical, MvNormal, MvNormalParams
 export logpdf, logjnt
 export SumNode, ProductNode, SetNode
 export rand, randwithlabel
-export setmixture, gmm, sharedsetmixture, spn
+export gmm, setmixture, sharedsetmixture, spn
 
 export reflectinmodel
-export em_loss, ce_loss, ssl_loss
-
-export VAE, Encoder, Decoder, SplitLayer, elbo, reconstruct_loss
+export em_loss, ce_loss
 
 Base.show(io::IO, ::MIME"text/plain", n::AbstractModelNode) = HierarchicalUtils.printtree(io, n)
 
