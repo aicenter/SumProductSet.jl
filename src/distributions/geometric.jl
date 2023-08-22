@@ -44,13 +44,8 @@ Geometric(n::Int; dtype::Type{<:Real}=Float32) = Geometric(dtype(0.01)*randn(dty
 
 
 function _logpdf_geometric(logitp::Vector{T}, x::SparseMatrixCSC) where {T<:Real}
-    ndims, nobs = size(x)
-    linit = T(0e0)    # linit = sum(logsigmoid, m.logitp)
-    @inbounds for r in eachindex(logitp)
-        linit += logsigmoid(logitp[r])
-    end
-    l = fill(linit, 1, nobs)
-
+    linit = sum(logsigmoid, logitp)
+    l = fill(linit, 1, size(x, 2))
     @inbounds for (i, j, k) in zip(findnz(x)...)
         l[j] += k*logsigmoid(-logitp[i]) 
     end
@@ -58,18 +53,16 @@ function _logpdf_geometric(logitp::Vector{T}, x::SparseMatrixCSC) where {T<:Real
 end
 
 function _logpdf_back(logitp::Vector{T}, x, Δy) where {T<:Real}
-    ndims, nobs = size(x)
-    sum_Δy = sum(Δy)
+    Δlogitp = fill(sum(Δy), size(x, 1))
 
-    Δp = fill(sum_Δy, ndims)
-    @inbounds for r in eachindex(Δp)
-        Δp[r] *= sigmoid(-logitp[r])
+    @inbounds for r in eachindex(Δlogitp)
+        Δlogitp[r] *= sigmoid(-logitp[r])
     end
 
     @inbounds for (i, j, k) in zip(findnz(x)...)
-        Δp[i] -= k*sigmoid(logitp[i])*Δy[j] 
+        Δlogitp[i] -= k*sigmoid(logitp[i])*Δy[j] 
     end
-    Δp, NoTangent()
+    Δlogitp, NoTangent()
 end
 
 function ChainRulesCore.rrule(::typeof(_logpdf_geometric), logitp::Vector{T}, x::SparseMatrixCSC) where {T<:Real}
