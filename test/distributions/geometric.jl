@@ -21,6 +21,17 @@ end
     @test size(rand(m, nobs)) == (ndims, nobs)
 end
 
+@testset "Geometric --- rrule test" begin
+    ndims = 10
+    nobs = 100
+    dtype = Float64
+	m = SumProductSet.Geometric(ndims; dtype=dtype)
+    x = rand(m, nobs)
+
+    test_rrule(SumProductSet._logpdf_geometric, m.logitp, x.data ⊢ NoTangent();
+                check_inferred=true, rtol = 1.0e-9, atol = 1.0e-9)
+end
+
 @testset "Geometric --- integration with Flux" begin
     ndims = 10
     nobs = 100

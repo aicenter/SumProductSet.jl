@@ -1,5 +1,5 @@
 using Test
-using SumProductSet, Flux, Distributions, SparseArrays
+using SumProductSet, Flux, Distributions, SparseArrays, ChainRulesCore, ChainRulesTestUtils
 import Mill
 
 include("distributions/mvnormal.jl")
