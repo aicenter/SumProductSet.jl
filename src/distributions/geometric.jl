@@ -46,21 +46,34 @@ Geometric(n::Int; dtype::Type{<:Real}=Float32) = Geometric(dtype(0.01)*randn(dty
 function _logpdf_geometric(logitp::Vector{T}, x::SparseMatrixCSC) where {T<:Real}
     linit = sum(logsigmoid, logitp)
     l = fill(linit, 1, size(x, 2))
-    @inbounds for (i, j, k) in zip(findnz(x)...)
-        l[j] += k*logsigmoid(-logitp[i]) 
+
+    rows = rowvals(x)
+    vals = nonzeros(x)
+    @inbounds for j in 1:size(x, 2)
+        for i in nzrange(x, j)
+            row = rows[i]
+            val = vals[i]
+            l[j] += val * logsigmoid(-logitp[row])
+        end
     end
     l
 end
 
 function _logpdf_back(logitp::Vector{T}, x, Δy) where {T<:Real}
-    Δlogitp = fill(sum(Δy), size(x, 1))
+    Δlogitp = fill(sum(Δy), length(logitp))
 
     @inbounds for r in eachindex(Δlogitp)
         Δlogitp[r] *= sigmoid(-logitp[r])
     end
 
-    @inbounds for (i, j, k) in zip(findnz(x)...)
-        Δlogitp[i] -= k*sigmoid(logitp[i])*Δy[j] 
+    rows = rowvals(x)
+    vals = nonzeros(x)
+    @inbounds for j in 1:size(x, 2)
+        for i in nzrange(x, j)
+            row = rows[i]
+            val = vals[i]
+            Δlogitp[row] -= val * sigmoid(logitp[row]) * Δy[j]
+        end
     end
     Δlogitp, NoTangent()
 end
