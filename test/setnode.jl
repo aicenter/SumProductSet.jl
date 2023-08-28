@@ -33,7 +33,7 @@ end
     ndims = 2
     nobs = 100
     dtype = Float64
-	m = SumProductSet.SetNode(SumProductSet.MvNormal(ndims;dtype=dtype), SumProductSet.Poisson())
+	m = SumProductSet.SetNode(SumProductSet.MvNormal(ndims;dtype=dtype), SumProductSet.Poisson(dtype))
     x = rand(m, nobs)
     bags = x.bags.bags
     logp_f = SumProductSet.logpdf(m.feature, x.data)
