@@ -14618,7 +14618,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="Update-default-JsonGrinder-extractor">Update default JsonGrinder extractor<a class="anchor-link" href="#Update-default-JsonGrinder-extractor">&#182;</a></h1>
+<h1 id="Extract-data-into-MILL-format">Extract data into MILL format<a class="anchor-link" href="#Extract-data-into-MILL-format">&#182;</a></h1>
 </div>
 </div>
 </div>
@@ -14630,73 +14630,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[2]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="k">function</span><span class="w"> </span><span class="n">default_scalar_extractor</span><span class="p">()</span>
-<span class="w">    </span><span class="p">[</span>
-<span class="w">    </span><span class="p">(</span><span class="n">e</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">length</span><span class="p">(</span><span class="n">keys</span><span class="p">(</span><span class="n">e</span><span class="p">))</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">JsonGrinder</span><span class="o">.</span><span class="n">is_numeric_or_numeric_string</span><span class="p">(</span><span class="n">e</span><span class="p">),</span>
-<span class="w">        </span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ExtractCategorical</span><span class="p">(</span><span class="n">keys</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)),</span>
-<span class="w">    </span><span class="p">(</span><span class="n">e</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">JsonGrinder</span><span class="o">.</span><span class="n">is_intable</span><span class="p">(</span><span class="n">e</span><span class="p">),</span>
-<span class="w">        </span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">extractscalar</span><span class="p">(</span><span class="kt">Int32</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)),</span>
-<span class="w">    </span><span class="p">(</span><span class="n">e</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">JsonGrinder</span><span class="o">.</span><span class="n">is_floatable</span><span class="p">(</span><span class="n">e</span><span class="p">),</span>
-<span class="w">        </span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">extractscalar</span><span class="p">(</span><span class="kt">Float32</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)),</span>
-<span class="w">    </span><span class="p">(</span><span class="n">e</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">keys_len</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">length</span><span class="p">(</span><span class="n">keys</span><span class="p">(</span><span class="n">e</span><span class="p">));</span><span class="w"> </span><span class="n">keys_len</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">e</span><span class="o">.</span><span class="n">updated</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.1</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">keys_len</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">10000</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">!</span><span class="n">JsonGrinder</span><span class="o">.</span><span class="n">is_numeric_or_numeric_string</span><span class="p">(</span><span class="n">e</span><span class="p">)),</span>
-<span class="w">        </span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ExtractCategorical</span><span class="p">(</span><span class="n">keys</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)),</span>
-<span class="w">    </span><span class="p">(</span><span class="n">e</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nb">true</span><span class="p">,</span>
-<span class="w">        </span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="n">uniontypes</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ExtractScalar</span><span class="p">(</span><span class="kt">Float32</span><span class="p">,</span><span class="w"> </span><span class="mf">0.</span><span class="p">,</span><span class="w"> </span><span class="mf">1.</span><span class="p">,</span><span class="w"> </span><span class="nb">false</span><span class="p">)),]</span>
-<span class="k">end</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child jp-OutputArea-executeResult">
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
-
-
-
-
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>default_scalar_extractor (generic function with 1 method)</pre>
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="Extract-data-into-MILL-format">Extract data into MILL format<a class="anchor-link" href="#Extract-data-into-MILL-format">&#182;</a></h1>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[3]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-julia"><pre><span></span><span class="n">train_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MLDatasets</span><span class="o">.</span><span class="n">Mutagenesis</span><span class="p">(</span><span class="n">split</span><span class="o">=</span><span class="ss">:train</span><span class="p">)</span>
 <span class="n">x_train</span><span class="p">,</span><span class="w"> </span><span class="n">y_train</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">train_data</span><span class="o">.</span><span class="n">features</span><span class="p">,</span><span class="w"> </span><span class="n">train_data</span><span class="o">.</span><span class="n">targets</span>
 <span class="n">y_train</span><span class="w"> </span><span class="o">.+=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <span class="n">sch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">JsonGrinder</span><span class="o">.</span><span class="n">schema</span><span class="p">(</span><span class="n">x_train</span><span class="p">)</span>
-<span class="n">extractor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">suggestextractor</span><span class="p">(</span><span class="n">sch</span><span class="p">,</span><span class="w"> </span><span class="p">(;</span><span class="w"> </span><span class="n">scalar_extractors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">default_scalar_extractor</span><span class="p">()))</span>
+<span class="n">extractor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">suggestextractor</span><span class="p">(</span><span class="n">sch</span><span class="p">)</span>
 <span class="n">ds_train</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Mill</span><span class="o">.</span><span class="n">catobs</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="p">(</span><span class="n">x_train</span><span class="p">))</span>
 </pre></div>
 
@@ -14713,7 +14651,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
 
 
 
@@ -14745,7 +14683,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[4]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[3]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-julia"><pre><span></span><span class="n">printtree</span><span class="p">(</span><span class="n">sch</span><span class="p">,</span><span class="w"> </span><span class="n">htrunc</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span><span class="w"> </span><span class="n">vtrunc</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
@@ -14797,7 +14735,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[5]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[4]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-julia"><pre><span></span><span class="n">test_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MLDatasets</span><span class="o">.</span><span class="n">Mutagenesis</span><span class="p">(</span><span class="n">split</span><span class="o">=</span><span class="ss">:test</span><span class="p">)</span>
@@ -14827,7 +14765,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[6]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-julia"><pre><span></span><span class="k">function</span><span class="w"> </span><span class="n">train!</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">;</span><span class="w"> </span><span class="n">niter</span><span class="o">::</span><span class="kt">Int</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="w"> </span><span class="n">opt</span><span class="o">=</span><span class="n">ADAM</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span><span class="w"> </span><span class="n">cb</span><span class="o">=</span><span class="n">iter</span><span class="o">-&gt;</span><span class="p">())</span>
@@ -14854,7 +14792,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
 
 
 
@@ -14874,7 +14812,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[7]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[6]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-julia"><pre><span></span><span class="n">predict</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Flux</span><span class="o">.</span><span class="n">onecold</span><span class="p">(</span><span class="n">softmax</span><span class="p">(</span><span class="n">logjnt</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">)))</span>
@@ -14893,13 +14831,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
 
 
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>#28 (generic function with 1 method)</pre>
+<pre>#8 (generic function with 1 method)</pre>
 </div>
 
 </div>
@@ -14913,7 +14851,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[8]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[7]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-julia"><pre><span></span><span class="n">accuracy</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mean</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">.==</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
@@ -14938,7 +14876,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
 
 
 
@@ -14960,7 +14898,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="Initialize-model-which-reflects-training-data">Initialize model which reflects training data<a class="anchor-link" href="#Initialize-model-which-reflects-training-data">&#182;</a></h1>
+<h1 id="Initialize-and-train-model">Initialize and train model<a class="anchor-link" href="#Initialize-and-train-model">&#182;</a></h1>
 </div>
 </div>
 </div>
@@ -14973,9 +14911,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-julia"><pre><span></span><span class="n">Random</span><span class="o">.</span><span class="n">seed!</span><span class="p">(</span><span class="mi">1234</span><span class="p">);</span>
-<span class="n">dir_rand</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rand</span><span class="p">(</span><span class="n">d</span><span class="p">);</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">./</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
-<span class="n">f_cat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">d</span><span class="o">-&gt;</span><span class="n">Categorical</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="p">(</span><span class="n">dir_rand</span><span class="p">(</span><span class="n">d</span><span class="p">)))</span><span class="w"> </span><span class="c"># choose how to represent categorical variables</span>
-<span class="n">f_cont</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">d</span><span class="o">-&gt;</span><span class="n">gmm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="n">d</span><span class="p">)</span><span class="w">  </span><span class="c"># choose how to represent continuous variables</span>
+<span class="n">n_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">length</span><span class="p">(</span><span class="n">unique</span><span class="p">(</span><span class="n">y_train</span><span class="p">))</span>
 
 <span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">reflectinmodel</span><span class="p">(</span><span class="n">ds_train</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span>
 <span class="n">cb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">status</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">ds_train</span><span class="p">,</span><span class="w"> </span><span class="n">y_train</span><span class="p">,</span><span class="w"> </span><span class="n">ds_test</span><span class="p">,</span><span class="w"> </span><span class="n">y_test</span><span class="p">)</span>
@@ -15002,105 +14938,105 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <pre>Epoch 0 - acc: | 0.610  0.682 | 
 Epoch 1 - acc: | 0.610  0.682 | 
 Epoch 2 - acc: | 0.610  0.682 | 
-Epoch 3 - acc: | 0.670  0.682 | 
-Epoch 4 - acc: | 0.850  0.773 | 
-Epoch 5 - acc: | 0.850  0.795 | 
-Epoch 6 - acc: | 0.830  0.773 | 
-Epoch 7 - acc: | 0.820  0.818 | 
-Epoch 8 - acc: | 0.800  0.750 | 
-Epoch 9 - acc: | 0.800  0.727 | 
-Epoch 10 - acc: | 0.790  0.682 | 
-Epoch 11 - acc: | 0.790  0.659 | 
-Epoch 12 - acc: | 0.790  0.682 | 
-Epoch 13 - acc: | 0.790  0.705 | 
+Epoch 3 - acc: | 0.610  0.682 | 
+Epoch 4 - acc: | 0.610  0.682 | 
+Epoch 5 - acc: | 0.650  0.682 | 
+Epoch 6 - acc: | 0.860  0.727 | 
+Epoch 7 - acc: | 0.840  0.795 | 
+Epoch 8 - acc: | 0.830  0.841 | 
+Epoch 9 - acc: | 0.800  0.773 | 
+Epoch 10 - acc: | 0.800  0.750 | 
+Epoch 11 - acc: | 0.790  0.727 | 
+Epoch 12 - acc: | 0.790  0.727 | 
+Epoch 13 - acc: | 0.790  0.750 | 
 Epoch 14 - acc: | 0.790  0.727 | 
 Epoch 15 - acc: | 0.800  0.750 | 
-Epoch 16 - acc: | 0.800  0.773 | 
-Epoch 17 - acc: | 0.840  0.773 | 
-Epoch 18 - acc: | 0.890  0.773 | 
-Epoch 19 - acc: | 0.880  0.773 | 
-Epoch 20 - acc: | 0.880  0.795 | 
-Epoch 21 - acc: | 0.870  0.795 | 
-Epoch 22 - acc: | 0.870  0.795 | 
-Epoch 23 - acc: | 0.880  0.795 | 
-Epoch 24 - acc: | 0.890  0.795 | 
-Epoch 25 - acc: | 0.880  0.795 | 
-Epoch 26 - acc: | 0.880  0.795 | 
-Epoch 27 - acc: | 0.880  0.773 | 
-Epoch 28 - acc: | 0.870  0.773 | 
-Epoch 29 - acc: | 0.850  0.773 | 
-Epoch 30 - acc: | 0.840  0.773 | 
-Epoch 31 - acc: | 0.840  0.773 | 
-Epoch 32 - acc: | 0.850  0.773 | 
-Epoch 33 - acc: | 0.870  0.773 | 
-Epoch 34 - acc: | 0.870  0.773 | 
-Epoch 35 - acc: | 0.880  0.773 | 
-Epoch 36 - acc: | 0.880  0.773 | 
-Epoch 37 - acc: | 0.880  0.773 | 
-Epoch 38 - acc: | 0.880  0.773 | 
-Epoch 39 - acc: | 0.860  0.773 | 
-Epoch 40 - acc: | 0.880  0.773 | 
-Epoch 41 - acc: | 0.880  0.773 | 
-Epoch 42 - acc: | 0.880  0.773 | 
-Epoch 43 - acc: | 0.880  0.773 | 
-Epoch 44 - acc: | 0.880  0.773 | 
-Epoch 45 - acc: | 0.860  0.773 | 
-Epoch 46 - acc: | 0.850  0.773 | 
-Epoch 47 - acc: | 0.850  0.773 | 
-Epoch 48 - acc: | 0.850  0.773 | 
-Epoch 49 - acc: | 0.850  0.773 | 
-Epoch 50 - acc: | 0.850  0.773 | 
-Epoch 51 - acc: | 0.860  0.773 | 
-Epoch 52 - acc: | 0.870  0.773 | 
-Epoch 53 - acc: | 0.870  0.773 | 
-Epoch 54 - acc: | 0.870  0.773 | 
-Epoch 55 - acc: | 0.890  0.773 | 
-Epoch 56 - acc: | 0.890  0.773 | 
-Epoch 57 - acc: | 0.890  0.773 | 
+Epoch 16 - acc: | 0.800  0.750 | 
+Epoch 17 - acc: | 0.800  0.773 | 
+Epoch 18 - acc: | 0.800  0.795 | 
+Epoch 19 - acc: | 0.800  0.773 | 
+Epoch 20 - acc: | 0.840  0.773 | 
+Epoch 21 - acc: | 0.850  0.773 | 
+Epoch 22 - acc: | 0.850  0.773 | 
+Epoch 23 - acc: | 0.870  0.773 | 
+Epoch 24 - acc: | 0.890  0.773 | 
+Epoch 25 - acc: | 0.890  0.773 | 
+Epoch 26 - acc: | 0.890  0.773 | 
+Epoch 27 - acc: | 0.890  0.750 | 
+Epoch 28 - acc: | 0.890  0.750 | 
+Epoch 29 - acc: | 0.860  0.750 | 
+Epoch 30 - acc: | 0.860  0.750 | 
+Epoch 31 - acc: | 0.840  0.750 | 
+Epoch 32 - acc: | 0.840  0.750 | 
+Epoch 33 - acc: | 0.840  0.750 | 
+Epoch 34 - acc: | 0.840  0.750 | 
+Epoch 35 - acc: | 0.810  0.727 | 
+Epoch 36 - acc: | 0.800  0.705 | 
+Epoch 37 - acc: | 0.800  0.705 | 
+Epoch 38 - acc: | 0.800  0.705 | 
+Epoch 39 - acc: | 0.800  0.682 | 
+Epoch 40 - acc: | 0.800  0.682 | 
+Epoch 41 - acc: | 0.810  0.705 | 
+Epoch 42 - acc: | 0.810  0.705 | 
+Epoch 43 - acc: | 0.810  0.705 | 
+Epoch 44 - acc: | 0.810  0.705 | 
+Epoch 45 - acc: | 0.810  0.727 | 
+Epoch 46 - acc: | 0.810  0.750 | 
+Epoch 47 - acc: | 0.810  0.750 | 
+Epoch 48 - acc: | 0.810  0.727 | 
+Epoch 49 - acc: | 0.810  0.727 | 
+Epoch 50 - acc: | 0.810  0.727 | 
+Epoch 51 - acc: | 0.830  0.727 | 
+Epoch 52 - acc: | 0.830  0.727 | 
+Epoch 53 - acc: | 0.830  0.727 | 
+Epoch 54 - acc: | 0.830  0.727 | 
+Epoch 55 - acc: | 0.830  0.727 | 
+Epoch 56 - acc: | 0.830  0.773 | 
+Epoch 57 - acc: | 0.860  0.773 | 
 Epoch 58 - acc: | 0.890  0.773 | 
-Epoch 59 - acc: | 0.890  0.773 | 
-Epoch 60 - acc: | 0.890  0.773 | 
-Epoch 61 - acc: | 0.890  0.773 | 
-Epoch 62 - acc: | 0.890  0.773 | 
-Epoch 63 - acc: | 0.890  0.773 | 
-Epoch 64 - acc: | 0.890  0.773 | 
-Epoch 65 - acc: | 0.890  0.773 | 
-Epoch 66 - acc: | 0.890  0.773 | 
-Epoch 67 - acc: | 0.890  0.773 | 
-Epoch 68 - acc: | 0.890  0.773 | 
-Epoch 69 - acc: | 0.890  0.773 | 
-Epoch 70 - acc: | 0.890  0.773 | 
-Epoch 71 - acc: | 0.890  0.773 | 
-Epoch 72 - acc: | 0.890  0.773 | 
-Epoch 73 - acc: | 0.890  0.773 | 
-Epoch 74 - acc: | 0.890  0.773 | 
-Epoch 75 - acc: | 0.890  0.773 | 
-Epoch 76 - acc: | 0.890  0.773 | 
-Epoch 77 - acc: | 0.890  0.773 | 
-Epoch 78 - acc: | 0.890  0.773 | 
-Epoch 79 - acc: | 0.890  0.773 | 
-Epoch 80 - acc: | 0.890  0.773 | 
-Epoch 81 - acc: | 0.890  0.773 | 
-Epoch 82 - acc: | 0.890  0.773 | 
-Epoch 83 - acc: | 0.890  0.773 | 
-Epoch 84 - acc: | 0.890  0.773 | 
-Epoch 85 - acc: | 0.890  0.773 | 
-Epoch 86 - acc: | 0.890  0.773 | 
-Epoch 87 - acc: | 0.890  0.773 | 
-Epoch 88 - acc: | 0.890  0.773 | 
-Epoch 89 - acc: | 0.890  0.773 | 
-Epoch 90 - acc: | 0.890  0.773 | 
-Epoch 91 - acc: | 0.890  0.773 | 
-Epoch 92 - acc: | 0.890  0.773 | 
-Epoch 93 - acc: | 0.890  0.773 | 
-Epoch 94 - acc: | 0.890  0.773 | 
-Epoch 95 - acc: | 0.890  0.773 | 
-Epoch 96 - acc: | 0.890  0.773 | 
-Epoch 97 - acc: | 0.890  0.773 | 
-Epoch 98 - acc: | 0.890  0.773 | 
-Epoch 99 - acc: | 0.890  0.773 | 
-Epoch 100 - acc: | 0.890  0.773 | 
-108.356103 seconds (247.62 M allocations: 59.257 GiB, 10.02% gc time, 60.86% compilation time)
+Epoch 59 - acc: | 0.910  0.773 | 
+Epoch 60 - acc: | 0.910  0.773 | 
+Epoch 61 - acc: | 0.910  0.795 | 
+Epoch 62 - acc: | 0.930  0.795 | 
+Epoch 63 - acc: | 0.940  0.795 | 
+Epoch 64 - acc: | 0.930  0.795 | 
+Epoch 65 - acc: | 0.930  0.795 | 
+Epoch 66 - acc: | 0.930  0.795 | 
+Epoch 67 - acc: | 0.920  0.795 | 
+Epoch 68 - acc: | 0.930  0.795 | 
+Epoch 69 - acc: | 0.920  0.795 | 
+Epoch 70 - acc: | 0.920  0.795 | 
+Epoch 71 - acc: | 0.920  0.795 | 
+Epoch 72 - acc: | 0.920  0.795 | 
+Epoch 73 - acc: | 0.920  0.795 | 
+Epoch 74 - acc: | 0.920  0.795 | 
+Epoch 75 - acc: | 0.920  0.795 | 
+Epoch 76 - acc: | 0.920  0.795 | 
+Epoch 77 - acc: | 0.920  0.795 | 
+Epoch 78 - acc: | 0.920  0.795 | 
+Epoch 79 - acc: | 0.920  0.795 | 
+Epoch 80 - acc: | 0.920  0.795 | 
+Epoch 81 - acc: | 0.920  0.818 | 
+Epoch 82 - acc: | 0.920  0.818 | 
+Epoch 83 - acc: | 0.920  0.818 | 
+Epoch 84 - acc: | 0.920  0.818 | 
+Epoch 85 - acc: | 0.920  0.818 | 
+Epoch 86 - acc: | 0.920  0.818 | 
+Epoch 87 - acc: | 0.920  0.818 | 
+Epoch 88 - acc: | 0.920  0.818 | 
+Epoch 89 - acc: | 0.920  0.818 | 
+Epoch 90 - acc: | 0.920  0.818 | 
+Epoch 91 - acc: | 0.920  0.795 | 
+Epoch 92 - acc: | 0.920  0.795 | 
+Epoch 93 - acc: | 0.920  0.795 | 
+Epoch 94 - acc: | 0.920  0.795 | 
+Epoch 95 - acc: | 0.920  0.795 | 
+Epoch 96 - acc: | 0.920  0.795 | 
+Epoch 97 - acc: | 0.900  0.795 | 
+Epoch 98 - acc: | 0.900  0.795 | 
+Epoch 99 - acc: | 0.900  0.795 | 
+Epoch 100 - acc: | 0.900  0.795 | 
+  1.081917 seconds (887.39 k allocations: 634.869 MiB, 5.38% gc time, 3.28% compilation time)
 </pre>
 </div>
 </div>

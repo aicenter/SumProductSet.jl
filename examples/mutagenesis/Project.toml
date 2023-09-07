@@ -1,8 +1,3 @@
-name = "mutagenesis"
-uuid = "72acebe5-962d-406a-88dd-574473246d5e"
-authors = ["Martin Rektoris <martin.rektoris@gmail.com>"]
-version = "0.1.0"
-
 [deps]
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 HierarchicalUtils = "f9ccea15-0695-44b9-8113-df7c26ae4fa9"
