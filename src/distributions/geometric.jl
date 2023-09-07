@@ -34,7 +34,7 @@ end
 
 Flux.@functor Geometric
 
-Geometric(n::Int; dtype::Type{<:Real}=Float32) = Geometric(dtype(0.01)*randn(dtype, n))
+Geometric(n::Int; dtype::Type{<:Real}=Float32) = Geometric(dtype(0.1)*randn(dtype, n))
 
 ####
 #   Functions for calculating the likelihood
@@ -76,6 +76,20 @@ function _logpdf_back(logitp::Vector{T}, x, Δy) where {T<:Real}
         end
     end
     Δlogitp, NoTangent()
+end
+
+function _logpdf2_geo(logitp::Vector, x::NGramMatrix) 
+
+    linit = sum(logsigmoid, logitp)
+    l = fill(linit, 1, size(x, 2))
+
+    mlogp = logsigmoid.(-logitp)  # unnecessay memory allocation, saves computing time
+    @inbounds for j in 1:size(x, 2)
+        for i in NGramIterator(x, j)
+            l[j] += mlogp[i+1]
+        end
+    end
+    l
 end
 
 function ChainRulesCore.rrule(::typeof(_logpdf_geometric), logitp::Vector{T}, x::SparseMatrixCSC) where {T<:Real}
