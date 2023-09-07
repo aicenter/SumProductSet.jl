@@ -55,10 +55,12 @@ _logpdf(x::Union{Array{T, 2}, Array{Maybe{T}, 2}}) where {T<:Real} = -T(5e-1)*(l
 logpdf(m::MvNormal{T, 2}, x::Array{T, 2})        where {T<:Real} = log(abs(det(m.A + m.r * I)))     .+ sum(_logpdf((m.A  + m.r * I)  * x .+ m.b),          dims=1)
 logpdf(m::MvNormal{T, 1}, x::Array{T, 2})        where {T<:Real} = sum(log.(abs.(m.A .+ m.r)))      .+ sum(_logpdf((m.A .+ m.r)     .* x .+ m.b),          dims=1)
 logpdf(m::MvNormal{T, 1}, x::Array{Maybe{T}, 2}) where {T<:Real} = sum(coalesce.(log.(abs.(m.A .+ m.r)) .+ _logpdf((m.A .+ m.r)     .* x .+ m.b), T(0e0)); dims=1)
+logpdf(m::MvNormal{T, 1}, x::Array{Missing, 2})  where {T<:Real} = zeros(T, 1, size(x, 2))
 
 logpdf(m::MvNormal{T, 2}, x::Array{T, 1})        where {T<:Real} = logpdf(m, hcat(x))
 logpdf(m::MvNormal{T, 1}, x::Array{T, 1})        where {T<:Real} = logpdf(m, hcat(x))
 logpdf(m::MvNormal{T, 1}, x::Array{Maybe{T}, 1}) where {T<:Real} = logpdf(m, hcat(x))
+logpdf(m::MvNormal{T, 1}, x::Array{Missing, 1})  where {T<:Real} = zeros(T, 1, 1)
 
 ####
 #   Functions for generating random samples
