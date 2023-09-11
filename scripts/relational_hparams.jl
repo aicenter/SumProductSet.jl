@@ -50,9 +50,9 @@ function slurm_spsn_acc()
     x_trn, x_val, x_tst, y_trn, y_val, y_tst = split_data(x, y, seed_split)
 
     dist_cont = d-> gmm(ncont, d)
-    disc_card = ncard > 1 ? ()->SumNode([Poisson(Float32(log(ncard*rand(2*ncard:10*ncard)))) for _ in 1:ncard]) : ()-> Poisson(Float32(log(rand(2:10))))
+    dist_card = ncard > 1 ? ()->SumNode([Poisson(Float32(log(ncard*rand(2*ncard:10*ncard)))) for _ in 1:ncard]) : ()-> Poisson(Float32(log(rand(2:10))))
 
-    m = SumProductSet.reflectinmodel(x_trn[1], length(unique(y)); hete_nl=pl, hete_ns=ps, seed=seed_init, dist_cont=dist_cont, disc_card=disc_card)
+    m = SumProductSet.reflectinmodel(x_trn[1], length(unique(y)); hete_nl=pl, hete_ns=ps, seed=seed_init, dist_cont=dist_cont, dist_card=dist_card)
 
     config_exp = (; seed_split, seed_init, dirdata, dataset=dataset.name, pl, ps, ncard, ncont, nepoc, bsize, ssize)
     config_wat = (suffix="jld2", sort=false, ignores=(:dirdata, ), verbose=true, force=true)
