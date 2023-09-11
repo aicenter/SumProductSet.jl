@@ -12,11 +12,11 @@ datasets = [
     (name="citeseer",    ndata=3312,  nclass=6 ) # 4
     (name="webkp",       ndata=877,   nclass=5 ) # 5
     (name="world",       ndata=239,   nclass=7 ) # 6
-    (name="craft_beer",  ndata=558,   nclass=51) # 7
-    (name="chess",       ndata=295,   nclass=3 ) # 8
-    (name="uw_cse",      ndata=278,   nclass=4 ) # 9
-    (name="hepatitis",   ndata=500,   nclass=2 ) # 10
-    # (name="ftp",         ndata=30000, nclass=3 ) # 11
+    (name="chess",       ndata=295,   nclass=3 ) # 7
+    (name="uw_cse",      ndata=278,   nclass=4 ) # 8
+    (name="hepatitis",   ndata=500,   nclass=2 ) # 9
+    # (name="ftp",         ndata=30000, nclass=3 ) # 10
+    # (name="craft_beer",  ndata=558,   nclass=51) # 111
 ]
 attributes = (dataset=map(d->d.name, datasets), data_per_class=map(d->round(Int, d.ndata/d.nclass), datasets))
 
