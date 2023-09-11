@@ -36,10 +36,10 @@ function reflectinmodel(
         homo_ns::Int = 1,
         hete_nl::Int = 1,
         hete_ns::Int = 1,
-        dist_cont = (d, dtype)->gmm(2, d; dtype=dtype),
-        dist_disc = (d, dtype)->Categorical(d; dtype=dtype),
-        dist_gram = (d, dtype)->Geometric(d; dtype=dtype),
-        dist_card = (dtype)->Poisson(dtype),
+        dist_cont = d->gmm(2, d),
+        dist_disc = d->Categorical(d),
+        dist_gram = d->Geometric(d),
+        dist_card = ()->Poisson(),
         data_type::Type{<:Real} = Float32,
         seed::Int=1
     )
@@ -48,7 +48,7 @@ function reflectinmodel(
 
     Random.seed!(seed)
 
-    root_ns > 1 ? SumNode(map(_->_reflectinmodel(x, settings), 1:root_ns); dtype=settings.data_type) : _reflectinmodel(x, settings) 
+    root_ns > 1 ? SumNode(map(_->_reflectinmodel(x, settings), 1:root_ns)) : _reflectinmodel(x, settings) 
 end
 
 function _reflectinmodel(x::Mill.ProductNode, settings::ModelSettings)
@@ -60,27 +60,25 @@ function _reflectinmodel(x::Mill.ProductNode, settings::ModelSettings)
 end
 function _reflectinmodel(x::Mill.BagNode,     settings::ModelSettings)
     if settings.homo_ns == 1
-        SetNode(_reflectinmodel(x.data, settings), settings.dist_card(settings.data_type))
+        SetNode(_reflectinmodel(x.data, settings), settings.dist_card())
     else
-        SumNode(
-            map(_->SetNode(_reflectinmodel(x.data, settings), settings.dist_card(settings.data_type)), 1:settings.homo_ns); 
-            dtype=settings.data_type)
+        SumNode(map(_->SetNode(_reflectinmodel(x.data, settings), settings.dist_card()), 1:settings.homo_ns))
     end
 end
 _reflectinmodel(x::Mill.ArrayNode, settings::ModelSettings) = _reflectinmodel(x.data, settings)
 
-_reflectinmodel(x::OneHotArray,           settings)                     = settings.dist_disc(size(x, 1), settings.data_type)
-_reflectinmodel(x::MaybeHotArray,         settings)                     = settings.dist_disc(size(x, 1), settings.data_type)
-_reflectinmodel(x::Array{T},              settings) where T <: Real     = settings.dist_cont(size(x, 1), settings.data_type)
-_reflectinmodel(x::Array{Maybe{T}},       settings) where T <: Real     = settings.dist_cont(size(x, 1), settings.data_type)
-_reflectinmodel(x::NGramMatrix{T},        settings) where T <: Sequence = settings.dist_gram(size(x, 1), settings.data_type)
-_reflectinmodel(x::NGramMatrix{Maybe{T}}, settings) where T <: Sequence = settings.dist_gram(size(x, 1), settings.data_type)
+_reflectinmodel(x::OneHotArray,           settings)                     = settings.dist_disc(size(x, 1))
+_reflectinmodel(x::MaybeHotArray,         settings)                     = settings.dist_disc(size(x, 1))
+_reflectinmodel(x::Array{T},              settings) where T <: Real     = settings.dist_cont(size(x, 1))
+_reflectinmodel(x::Array{Maybe{T}},       settings) where T <: Real     = settings.dist_cont(size(x, 1))
+_reflectinmodel(x::NGramMatrix{T},        settings) where T <: Sequence = settings.dist_gram(size(x, 1))
+_reflectinmodel(x::NGramMatrix{Maybe{T}}, settings) where T <: Sequence = settings.dist_gram(size(x, 1))
 
 
 function _productmodel(x, n::Int, settings::ModelSettings)
     k = keys(x.data)
     c = map(_->ProductNode(mapreduce(k->_reflectinmodel(x.data[k], settings), vcat, k), reduce(vcat, k)), 1:n)
-    n == 1 ? first(c) : SumNode(c; dtype=settings.data_type)
+    n == 1 ? first(c) : SumNode(c)
 end
 function _productmodel(x, scope::Vector{Symbol}, l::Int, n::Int, settings::ModelSettings) where N
     d = length(scope)
@@ -94,5 +92,5 @@ function _productmodel(x, scope::Vector{Symbol}, l::Int, n::Int, settings::Model
         comps_r = _productmodel(x[scope_r], scope_r, l-1, n, settings)
         ProductNode([comps_l, comps_r], [scope_l, scope_r])
     end
-    n == 1 ? first(c) : SumNode(c; dtype=settings.data_type)
+    n == 1 ? first(c) : SumNode(c)
 end
