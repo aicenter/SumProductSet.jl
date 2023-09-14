@@ -30,9 +30,11 @@ datasets = [
     (name="chess",           ndata=295,   nclass=3 ) # 8
     (name="uw_cse",          ndata=278,   nclass=4 ) # 9
     (name="hepatitis",       ndata=500,   nclass=2 ) # 10
-    (name="ptc",             ndata=343,   nclass=2 ) # 11
-    (name="dallas",          ndata=219,   nclass=7 ) # 12
-    (name="premier_league",  ndata=380,   nclass=3 ) # 13
+    (name="pubmed_diabetes", ndata=19717, nclass=3 ) # 11
+    (name="ftp",             ndata=30000, nclass=3 ) # 12
+    (name="ptc",             ndata=343,   nclass=2 ) # 13
+    (name="dallas",          ndata=219,   nclass=7 ) # 14
+    (name="premier_league",  ndata=380,   nclass=3 ) # 15
 ]
 
 attributes = (dataset=map(d->d.name, datasets), data_per_class=map(d->round(Int, d.ndata/d.nclass), datasets))
