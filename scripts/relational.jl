@@ -5,9 +5,9 @@
 #SBATCH --nodes=1 --ntasks-per-node=1 --cpus-per-task=1
 #SBATCH --partition=cpulong
 #SBATCH --exclude=n33
-#SBATCH --out=/home/papezmil/logs/%x-%j.out
+#SBATCH --out=/home/rektomar/logs/relational/%x-%j.out
 #=
-srun julia nodewise_spsn/nodewise_spsn.jl --n $SLURM_ARRAY_TASK_ID --m $1
+srun julia relational.jl --n $SLURM_ARRAY_TASK_ID --m $1
 exit
 # =#
 using DrWatson
@@ -23,7 +23,7 @@ function commands()
     s = ArgParseSettings()
     @add_arg_table s begin
         ("--n"; arg_type = Int; default=1);
-        ("--m"; arg_type = Int; default=7);
+        ("--m"; arg_type = Int; default=1);
     end
     parse_args(s)
 end
@@ -84,8 +84,36 @@ function slurm_spsn_mis()
 
     gd!(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst, Flux.Adam(ssize), nepoc, bsize, config_exp, config_wat, "missing")
 end
+function slurm_spsn_ad()
+    @unpack n, m = commands()
+    dataset = datasets[m]
+    pl, ps, nepoc, bsize, ssize, seed_split, seed_init = collect(Iterators.product(
+        [2],
+        collect(2:5),
+        [200],
+        [20],
+        [1e-1, 1e-2, 1e-3],
+        [1],
+        collect(1:5)))[n]
+    data = read("$(dirdata)/$(dataset.name).json", String)
+    data = JSON3.read(data)
+    x, y = data.x, data.y
+
+    # x = reduce(catobs, suggestextractor(schema(x), (; scalar_extractors = default_scalar_extractor())).(x))
+    x = reduce(catobs, suggestextractor(schema(x)).(x))
+    x_trn, x_val, x_tst, _, y_val, y_tst = split_data_ad(x, y, seed_split)
+
+    m = SumProductSet.reflectinmodel(x_trn[1], 1; hete_nl=pl, hete_ns=ps, seed=seed_init)
+
+    config_exp = (; seed_split, seed_init, dirdata, dataset=dataset.name, pl, ps, nepoc, bsize, ssize)
+    config_wat = (suffix="jld2", sort=false, ignores=(:dirdata, ), verbose=true, force=true)
+
+    gd_ad!(m, x_trn, x_val, x_tst, y_val, y_tst, Flux.Adam(ssize), nepoc, bsize, config_exp, config_wat, "ad")
+    @show rank(m, x_tst)
+end
 
 slurm_spsn_acc()
 # slurm_spsn_mis()
+# slurm_spsn_ad()
 
 nothing
