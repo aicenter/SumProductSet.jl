@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 #SBATCH --array=1-135
 #SBATCH --mem=32G
-#SBATCH --time=72:00:00
+#SBATCH --time=48:00:00
 #SBATCH --nodes=1 --ntasks-per-node=1 --cpus-per-task=1
 #SBATCH --partition=cpulong
 #SBATCH --exclude=n33
@@ -87,14 +87,14 @@ end
 function slurm_spsn_ad()
     @unpack n, m = commands()
     dataset = datasets[m]
-    pl, ps, nepoc, bsize, ssize, seed_split, seed_init = collect(Iterators.product(
+    seed_split, seed_init, pl, ps, nepoc, bsize, ssize = collect(Iterators.product(
+        collect(1:5),
+        [1],
         [2],
-        collect(2:5),
+        collect(2:7),
         [200],
         [20],
-        [1e-1, 1e-2, 1e-3],
-        [1],
-        collect(1:5)))[n]
+        [1e-1, 1e-2, 1e-3]))[n]
     data = read("$(dirdata)/$(dataset.name).json", String)
     data = JSON3.read(data)
     x, y = data.x, data.y
@@ -102,7 +102,9 @@ function slurm_spsn_ad()
     # x = reduce(catobs, suggestextractor(schema(x), (; scalar_extractors = default_scalar_extractor())).(x))
     x = reduce(catobs, suggestextractor(schema(x)).(x))
     x_trn, x_val, x_tst, _, y_val, y_tst = split_data_ad(x, y, seed_split)
-
+    @show Mill.nobs(x_trn)
+    @show Mill.nobs(x_val)
+    @show Mill.nobs(x_tst)
     m = SumProductSet.reflectinmodel(x_trn[1], 1; hete_nl=pl, hete_ns=ps, seed=seed_init)
 
     config_exp = (; seed_split, seed_init, dirdata, dataset=dataset.name, pl, ps, nepoc, bsize, ssize)
@@ -112,7 +114,7 @@ function slurm_spsn_ad()
     @show rank(m, x_tst)
 end
 
-slurm_spsn_acc()
+# slurm_spsn_acc()
 # slurm_spsn_mis()
 # slurm_spsn_ad()
 

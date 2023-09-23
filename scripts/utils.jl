@@ -45,11 +45,12 @@ function evaluate_ad(m, x_trn::Ar, x_val::Ar, x_tst::Ar, y_val::Ai, y_tst::Ai) w
     lkl_tst = mean(logpdf(m, x_tst))
 
     # -rank to get anomaly score
-    auc_val = binary_eval_report(y_val, -logpdf(m, x_val)[:])["au_roccurve"]
-    auc_tst = binary_eval_report(y_tst, -logpdf(m, x_tst)[:])["au_roccurve"]
+    auc_val = binary_eval_report(y_val, -rank(m, x_val)[:])["au_roccurve"]
+    auc_tst = binary_eval_report(y_tst, -rank(m, x_tst)[:])["au_roccurve"]
 
-    (; lkl_trn,     lkl_val,     lkl_tst,
-                    auc_val,     auc_tst)
+
+    (; lkl_trn, lkl_val, lkl_tst,
+                auc_val, auc_tst)
 end
 
 function gd!(m, x_trn::Ar, x_val::Ar, x_tst::Ar,
@@ -60,6 +61,11 @@ function gd!(m, x_trn::Ar, x_val::Ar, x_tst::Ar,
     final = :maximum_iterations
     o_trn = -ftype(Inf)
     o_val = +ftype(0e0)
+
+    eval = evaluate(m, x_trn, x_val, x_tst, y_trn, y_val, y_tst)
+    @printf("gd: epoch: %i | l_trn %2.2f | l_val %2.2f | l_tst %2.2f | a_trn %2.2f | a_val %2.2f | a_tst %2.2f |\n",
+            0, eval.lkl_trn, eval.lkl_val, eval.lkl_tst, eval.acc_trn, eval.acc_val, eval.acc_tst)
+
 
     for e in 1:nepoc
         t̄_trn = @elapsed begin
@@ -87,7 +93,7 @@ function gd!(m, x_trn::Ar, x_val::Ar, x_tst::Ar,
             push!(a_tst, eval.acc_tst)
         end
 
-        @printf("gd: epoch: %i | l_trn %2.2f | l_val %2.2f | l_tst %2.2f || a_trn %2.2f | a_val %2.2f | a_tst %2.2f |\n",
+        @printf("gd: epoch: %i | l_trn %2.2f | l_val %2.2f | l_tst %2.2f | a_trn %2.2f | a_val %2.2f | a_tst %2.2f |\n",
             e, eval.lkl_trn, eval.lkl_val, eval.lkl_tst, eval.acc_trn, eval.acc_val, eval.acc_tst)
 
         if eval.acc_val > o_val
@@ -108,6 +114,11 @@ function gd_ad!(m, x_trn::Ar, x_val::Ar, x_tst::Ar,
     final = :maximum_iterations
     o_trn = -ftype(Inf)
     o_val = +ftype(0e0)
+
+    eval = evaluate_ad(m, x_trn, x_val, x_tst, y_val, y_tst)
+
+    @printf("gd: epoch: %i | l_trn %2.2f | l_trn %2.2f | l_tst %2.2f | auc_val %2.2f | auc_tst %2.2f |\n",
+        0, eval.lkl_trn, eval.lkl_val, eval.lkl_tst, eval.auc_val, eval.auc_tst)
 
     for e in 1:nepoc
         t̄_trn = @elapsed begin
@@ -134,7 +145,7 @@ function gd_ad!(m, x_trn::Ar, x_val::Ar, x_tst::Ar,
             push!(auc_tst, eval.auc_tst)
         end
 
-        @printf("gd: epoch: %i | l_trn %2.2f | l_val %2.2f | l_tst %2.2f || auc_val %2.2f | auc_tst %2.2f |\n",
+        @printf("gd: epoch: %i | l_trn %2.2f | l_val %2.2f | l_tst %2.2f | auc_val %2.2f | auc_tst %2.2f |\n",
             e, eval.lkl_trn, eval.lkl_val, eval.lkl_tst, eval.auc_val, eval.auc_tst)
 
         if eval.auc_val > o_val
