@@ -27,6 +27,7 @@ include("loss.jl")
 include("rank.jl")
 
 export Poisson, Geometric, Categorical, MvNormal, MvNormalParams
+export DiagRMvNormal, IsoRMvNormal, UnitMvNormal
 export logpdf, logjnt
 export SumNode, ProductNode, SetNode
 export rand, randwithlabel
