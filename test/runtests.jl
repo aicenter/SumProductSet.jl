@@ -6,6 +6,7 @@ include("distributions/mvnormal.jl")
 include("distributions/poisson.jl")
 include("distributions/categorical.jl")
 include("distributions/geometric.jl")
+include("distributions/ratmvnormal.jl")
 
 include("setnode.jl")
 include("productnode.jl")
