@@ -1,5 +1,5 @@
 """
-ProductNode{C<:AbstractModelNode, D<:Union{UnitRange{Int}, Vector{T}, T} where {T<:Symbol}} <: AbstractModelNode
+ProductNode <: AbstractModelNode
 
 Implement a product of independent random variables as `AbstractModelNode`.
 
@@ -19,17 +19,22 @@ julia> logpdf(m, x)
  -36.468  -51.6233
 ```
 """
-struct ProductNode{C<:AbstractModelNode, D<:Union{UnitRange{Int}, Vector{T}, T} where {T<:Symbol}} <: AbstractModelNode
-    components::Vector{C}
-    dimensions::Vector{D}
+# struct ProductNode{C<:AbstractModelNode, D<:Union{UnitRange{Int}, Vector{T}, T} where {T<:Symbol}} <: AbstractModelNode
+#     components::Vector{C}
+#     dimensions::Vector{D}
+# end
+
+struct ProductNode{C<:Tuple{Vararg{<:AbstractModelNode}}, D<:Union{UnitRange{Int}, Vector{T}, T} where {T<:Symbol}} <: AbstractModelNode
+  components::C
+  dimensions::Vector{D}
 end
 
 Flux.@functor ProductNode
 Flux.trainable(m::ProductNode) = (m.components,)
 
-ProductNode(c::AbstractModelNode, d::Union{UnitRange{Int}, Vector{T}, T}) where {T<:Symbol} = ProductNode([c], [d]) # best to get rid of this in future
+ProductNode(c::AbstractModelNode, d::Union{UnitRange{Int}, Vector{T}, T}) where {T<:Symbol} = ProductNode((c), [d]) # best to get rid of this in future
 ProductNode(;ms...) = ProductNode(NamedTuple(ms))
-ProductNode(ms::NamedTuple) = ProductNode(collect(values(ms)), collect(keys(ms)))
+ProductNode(ms::NamedTuple) = ProductNode(Tuple(values(ms)), collect(keys(ms)))
 
 function ProductNode(components::Vector{<:AbstractModelNode})
   dimensions = Vector{UnitRange{Int}}(undef, length(components))
@@ -39,27 +44,44 @@ function ProductNode(components::Vector{<:AbstractModelNode})
       dimensions[i] = start:start + l - 1
       start += l
   end
-  ProductNode(components, collect(dimensions))
+  ProductNode(Tuple(components), collect(dimensions))
 end
 
 ####
 #	  Functions for calculating the likelihood
 ####
 
-logpdf(m::ProductNode, x::AbstractMatrix)   = mapreduce((c, d)->logpdf(c, x[d, :]), +, m.components, m.dimensions)
-logpdf(m::ProductNode, x::Mill.ProductNode) = mapreduce((c, d)->logpdf(c, x[d]),    +, m.components, m.dimensions)
+# logpdf3(m::ProductNode, x::AbstractMatrix) = reduce(+, map((c, d)->logpdf(c, x[d, :]), m.components, m.dimensions))
+# logpdf2(m::ProductNode, x::AbstractMatrix)  = mapreduce((c, d)->logpdf(c, x[d, :]), +, m.components, m.dimensions)  # the slowest gradient, the most allocations
+function logpdf(m::ProductNode, x::AbstractMatrix)   # the fastest gradient, the least number of allocations
+    @inbounds l = logpdf(m.components[1], x[m.dimensions[1], :])
+    for i in 2:length(m.dimensions)
+        @inbounds l += logpdf(m.components[i], x[m.dimensions[i], :])
+    end
+    l
+end
+
+
+# logpdf3(m::ProductNode, x::Mill.ProductNode) = reduce(+, map((c, d)->logpdf(c, x[d]), m.components, m.dimensions))
+# logpdf2(m::ProductNode, x::Mill.ProductNode) = mapreduce((c, d)->logpdf(c, x[d]), +, m.components, m.dimensions)
+function logpdf(m::ProductNode, x::Mill.ProductNode)   # the fastest gradient, the least number of allocations
+    @inbounds l = logpdf(m.components[1], x[m.dimensions[1]])
+    for i in 2:length(m.dimensions)
+        @inbounds l += logpdf(m.components[i], x[m.dimensions[i]])
+    end
+    l
+end
+
 logpdf(m::ProductNode, x::Mill.ArrayNode)   = logpdf(m, x.data)
 
 ####
 #	  Functions for generating random samples
 ####
 
-Base.rand(m::ProductNode{C, D}, n::Int) where {C<:AbstractModelNode, D<:Union{Vector{T}, T} where {T<:Symbol}} = 
+Base.rand(m::ProductNode{C, D}, n::Int) where {C, D<:Union{Vector{S}, S} where {S<:Symbol}} = 
   map((c, k)->k=>rand(c, n), m.components, m.dimensions) |> NamedTuple |> Mill.ProductNode
-Base.rand(m::ProductNode{C, D}, n::Int) where {C<:AbstractModelNode, D<:UnitRange{Int}} = 
+Base.rand(m::ProductNode{C, D}, n::Int) where {C, D<:UnitRange{Int}} = 
   Mill.ArrayNode(reduce(vcat, map(c->rand(c, n).data, m.components)))
-  # mapreduce(c->rand(c, n), vcat, m.components)
-  # reduce(sparse_vcat, map(c->rand(c, n), m.components))
 
 Base.rand(m::ProductNode) = rand(m, 1)
 
