@@ -37,8 +37,9 @@ SumNode(c::Vector; dtype::Type{<:Real}=Float32) = SumNode(c, ones(dtype, length(
 #   Functions for calculating the likelihood
 ####
 
-logjnt(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode}) = mapreduce(c->logpdf(c, x), vcat, m.components) .+ hcat(logsoftmax(m.weights))
-logpdf(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode}) = logsumexp(logjnt(m, x), dims=1)
+# logjnt(m::SumNode, x) = mapreduce((c, w)->logpdf(c, x) .+ w, vcat, m.components, logsoftmax(m.weights))
+logjnt(m::SumNode, x) = reduce(vcat, map((c, w)->logpdf(c, x) .+ w, m.components, logsoftmax(m.weights)))
+logpdf(m::SumNode, x) = logsumexp(logjnt(m, x), dims=1)
 
 ####
 #   Functions for generating random samples
@@ -47,27 +48,17 @@ logpdf(m::SumNode, x::Union{AbstractMatrix, Mill.AbstractMillNode}) = logsumexp(
 _samplelatent(m::SumNode, n::Int) = sample(1:length(m.weights), Weights(softmax(m.weights)), n)
 _samplelatent(m::SumNode) = _samplelatent(m, 1)[]
 
-Base.rand(m::SumNode, n::Int) = Mill.catobs(rand.(m.components[_samplelatent(m, n)])...)
+Base.rand(m::SumNode, n::Int) = reduce(Mill.catobs, rand.(m.components[_samplelatent(m, n)]))
 Base.rand(m::SumNode) = rand(m, 1)
 
 function randwithlabel(m::SumNode, n::Int)
-    i = _samplelatent(m, n)
-    x = hcat(rand.(m.components[i])...)
-    x, i
+    z = _samplelatent(m, n)
+    x = reduce(Mill.catobs, rand.(m.components[z]))
+    x, z
 end
 function randwithlabel(m::SumNode)
-    x, i = randwithlabel(m, 1)
-    x, i[]
-end
-
-function randwithlabel(m::SumNode{<:Real, <:SetNode}, n::Int)
-    i = _samplelatent(m, n)
-    x = Mill.catobs(rand.(m.components[i])...)
-    x, i
-end
-function randwithlabel(m::SumNode{<:Real, <:SetNode})
-    x, i = randwithlabel(m, 1)
-    x, i[]
+    x, z = randwithlabel(m, 1)
+    x, only(z)
 end
 
 ####
@@ -83,4 +74,4 @@ HierarchicalUtils.printchildren(m::SumNode) = tuple(m.components...)
 ####
 
 # Base.getindex(m::SumNode, i::Int) = (c = m.components[i], p = m.weights[i])
-# Base.length(m::SumNode) = length(m.components[1])
+Base.length(m::SumNode) = length(m.components[1])
