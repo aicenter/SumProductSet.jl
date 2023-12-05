@@ -80,14 +80,14 @@ _reflectinmodel(x::BitMatrix,             settings)                     = settin
 
 function _productmodel(x, n::Int, settings::ModelSettings)
     k = keys(x.data)
-    c = map(_->ProductNode(Tuple(mapreduce(k->_reflectinmodel(x.data[k], settings), vcat, k)), reduce(vcat, k)), 1:n)
+    c = map(_->ProductNode(mapreduce(k->_reflectinmodel(x.data[k], settings), vcat, k), reduce(vcat, k)), 1:n)
     n == 1 ? first(c) : SumNode(c)
 end
 function _productmodel(x, scope::Vector{Symbol}, l::Int, n::Int, settings::ModelSettings)
     d = length(scope)
     k = first(keys(x.data))
     l == 1 && return _productmodel(x, n, settings)
-    d == 1 && return ProductNode(Tuple(_reflectinmodel(x.data[k], settings)), k) # best to get rid of this in future (31 in productnode.jl)
+    d == 1 && return ProductNode(_reflectinmodel(x.data[k], settings), k) # best to get rid of this in future (31 in productnode.jl)
     r = ceil(Int, d / 2)
     c = map(1:n) do _
         scope_l, scope_r = scope[1:r], scope[r+1:end]

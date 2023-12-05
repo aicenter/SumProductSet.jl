@@ -32,19 +32,20 @@ end
 Flux.@functor ProductNode
 Flux.trainable(m::ProductNode) = (m.components,)
 
-ProductNode(c::AbstractModelNode, d::Union{UnitRange{Int}, Vector{T}, T}) where {T<:Symbol} = ProductNode((c), [d]) # best to get rid of this in future
+ProductNode(c::AbstractModelNode, d::Union{UnitRange{Int}, Vector{T}, T}) where {T<:Symbol} = ProductNode((c,), [d]) # best to get rid of this in future
 ProductNode(;ms...) = ProductNode(NamedTuple(ms))
 ProductNode(ms::NamedTuple) = ProductNode(Tuple(values(ms)), collect(keys(ms)))
 
+ProductNode(components::Vector{<:AbstractModelNode}, dimensions) = ProductNode(Tuple(components), dimensions)
 function ProductNode(components::Vector{<:AbstractModelNode})
-  dimensions = Vector{UnitRange{Int}}(undef, length(components))
-  start = 1
-  for (i, c) in enumerate(components)
-      l = length(c)
-      dimensions[i] = start:start + l - 1
-      start += l
-  end
-  ProductNode(Tuple(components), collect(dimensions))
+    dimensions = Vector{UnitRange{Int}}(undef, length(components))
+    start = 1
+    for (i, c) in enumerate(components)
+        l = length(c)
+        dimensions[i] = start:start + l - 1
+        start += l
+    end
+    ProductNode(Tuple(components), collect(dimensions))
 end
 
 ####
