@@ -35,7 +35,7 @@ export rand, randwithlabel
 export setmixture, gmm, sharedsetmixture, spn
 
 export reflectinmodel
-export em_loss, ce_loss, ssl_loss
+export em_loss, disc_loss, gen_loss
 export rank
 
 export VAE, Encoder, Decoder, SplitLayer, elbo, reconstruct_loss
