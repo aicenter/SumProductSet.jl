@@ -24,7 +24,7 @@ datasets = [
     (name="genes",           ndata=862,   nclass=15) # 2
     (name="cora",            ndata=2708,  nclass=7 ) # 3
     (name="citeseer",        ndata=3312,  nclass=6 ) # 4
-    (name="webkp",           ndata=877,   nclass=5 ) # 5
+    (name="webkp",           ndata=877,   nclass=5 ) # 5    
     (name="world",           ndata=239,   nclass=7 ) # 6
     (name="chess",           ndata=295,   nclass=3 ) # 7
     (name="uw_cse",          ndata=278,   nclass=4 ) # 8
@@ -32,9 +32,35 @@ datasets = [
     (name="pubmed_diabetes", ndata=19717, nclass=3 ) # 10
     (name="ftp",             ndata=30000, nclass=3 ) # 11
     (name="ptc",             ndata=343,   nclass=2 ) # 12
-    (name="dallas",          ndata=219,   nclass=7 ) # 13
+    # (name="dallas",          ndata=219,   nclass=7 ) # 13
     (name="premier_league",  ndata=380,   nclass=3 ) # 14
 ]
+
+function load_data(dataset_name)
+    data = read("$(dirdata)/$(dataset_name).json", String)
+    data = JSON3.read(data)
+    data.x, data.y
+end
+
+# counts = Dict(:O=>0, :H=>0, :L=>0)
+count_nodes!(counts::Dict, x::BagNode) = (counts[:O] += Mill.numobs(x); count_nodes!(counts, x.data))
+count_nodes!(counts::Dict, x::ProductNode) = (counts[:H] += Mill.numobs(x); map(xk->count_nodes!(counts, xk), x.data))
+count_nodes!(counts::Dict, x::ArrayNode) = counts[:L] += Mill.numobs(x)
+
+function create_table()
+    df = DataFrame(name = String[], ndata=Int64[], nclass=Int64[], O = Int64[], H = Int64[], L = Int64[], avg_O = Int64[], avg_H = Int64[], avg_L = Int64[])
+    for dataset in datasets
+        @show dataset.name
+        x, y = load_data(dataset.name)
+        x_mill = reduce(catobs, suggestextractor(schema(x)).(x))
+        counts = Dict(:O=>0, :H=>0, :L=>0)
+        count_nodes!(counts, x_mill)
+        nd = dataset.ndata
+        push!(df, [dataset.name, nd, dataset.nclass, counts[:O], counts[:H], counts[:L], round(Int, counts[:O]/nd), round(Int, counts[:H]/nd), round(Int, counts[:L]/nd)])
+    end
+    df
+end
+
 
 attributes = (dataset=map(d->d.name, datasets), data_per_class=map(d->round(Int, d.ndata/d.nclass), datasets))
 

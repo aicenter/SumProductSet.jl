@@ -8,8 +8,6 @@ include("poisson.jl")
 include("mvnormal.jl")
 include("categorical.jl")
 include("geometric.jl")
-include("ratmvnormal.jl")
-include("studentt.jl")
 include("bernoulli.jl")
 
 ####

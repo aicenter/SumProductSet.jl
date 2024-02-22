@@ -37,7 +37,6 @@ SumNode(c::Vector; dtype::Type{<:Real}=Float32) = SumNode(c, ones(dtype, length(
 #   Functions for calculating the likelihood
 ####
 
-# logjnt(m::SumNode, x) = mapreduce((c, w)->logpdf(c, x) .+ w, vcat, m.components, logsoftmax(m.weights))
 logjnt(m::SumNode, x) = reduce(vcat, map((c, w)->logpdf(c, x) .+ w, m.components, logsoftmax(m.weights)))
 logpdf(m::SumNode, x) = logsumexp(logjnt(m, x), dims=1)
 
@@ -73,5 +72,4 @@ HierarchicalUtils.printchildren(m::SumNode) = tuple(m.components...)
 #   Utilities
 ####
 
-# Base.getindex(m::SumNode, i::Int) = (c = m.components[i], p = m.weights[i])
 Base.length(m::SumNode) = length(m.components[1])

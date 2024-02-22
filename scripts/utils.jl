@@ -109,7 +109,7 @@ end
 function gd_ad!(m, x_trn::Ar, x_val::Ar, x_tst::Ar,
                               y_val::Ai, y_tst::Ai,
                 o, nepoc::Int, bsize::Int, config_exp, config_wat, folder; p::Flux.Params=Flux.params(m), ftype::Type=Float32) where {Ar<:Mill.AbstractMillNode,Ai<:AbstractArray{<:Int,1}}
-    t_trn, l_trn, l_val, l_tst, auc_trn, auc_val, auc_tst = ftype[], ftype[], ftype[], ftype[], ftype[], ftype[], ftype[]
+    t_trn, l_trn, l_val, l_tst, a_trn, a_val, a_tst = ftype[], ftype[], ftype[], ftype[], ftype[], ftype[], ftype[]
     d_trn = Flux.DataLoader(x_trn; batchsize=bsize)
     final = :maximum_iterations
     o_trn = -ftype(Inf)
@@ -141,8 +141,8 @@ function gd_ad!(m, x_trn::Ar, x_val::Ar, x_tst::Ar,
             push!(l_trn, eval.lkl_trn)
             push!(l_val, eval.lkl_val)
             push!(l_tst, eval.lkl_tst)
-            push!(auc_val, eval.auc_val)
-            push!(auc_tst, eval.auc_tst)
+            push!(a_val, eval.auc_val)
+            push!(a_tst, eval.auc_tst)
         end
 
         @printf("gd: epoch: %i | l_trn %2.2f | l_val %2.2f | l_tst %2.2f | auc_val %2.2f | auc_tst %2.2f |\n",
@@ -151,7 +151,7 @@ function gd_ad!(m, x_trn::Ar, x_val::Ar, x_tst::Ar,
         if eval.auc_val > o_val
             npars = length(Flux.destructure(m)[1])
             produce_or_load(datadir("nodewise_spsn/$(folder)"), config_exp; config_wat...) do config
-                ntuple2dict(merge(config, eval, (; t_trn, l_trn, l_val, l_tst, auc_trn, auc_val, auc_tst, final), (; m, npars)))
+                ntuple2dict(merge(config, eval, (; t_trn, l_trn, l_val, l_tst, a_val, a_tst, final), (; m, npars)))
             end
             o_val = eval.auc_val
         end

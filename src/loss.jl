@@ -1,4 +1,5 @@
 
+### Clustering losses ###
 function em_loss(m::SumNode, xu)
     # E-step for unlabeled data
     p = []
@@ -10,7 +11,8 @@ function em_loss(m::SumNode, xu)
 end 
 
 
-# disc loss is actually a cross entropy loss  
+### Classification losses ###
+# disc loss is actually a classical cross-entropy loss  
 
 disc_loss(m::SumNode, xl, yl::Vector{Int}) = -mean(logsoftmax(logjnt(m, xl), dims=1)[CartesianIndex.(yl, 1:length(yl))])
 gen_loss(m::SumNode, xl, yl::Vector{Int}) = -mean(logjnt(m, xl)[CartesianIndex.(yl, 1:length(yl))])

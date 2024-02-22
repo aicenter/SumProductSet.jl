@@ -37,6 +37,19 @@ function logpdf(m::SetNode, x::Mill.BagNode)
     _logpdf_set(logp_f, logp_c, bags)
 end
 
+function logpdf2(m::SetNode, x::Mill.BagNode)
+    bags = x.bags.bags
+    logp_f = logpdf(m.feature, x.data)
+
+    bag_lens = zeros(Int64, 1, length(bags))
+    for (bi, b) in enumerate(bags)
+        bag_lens[bi] += length(b)
+    end
+
+    logp_c = SumProductSet.logpdf(m.cardinality, bag_lens)
+    _logpdf_set(logp_f, logp_c, bags)
+end
+
 function _logpdf_set(logp_f, logp_c, bags)
     lb = copy(logp_c)
     @inbounds for (bi, b) in enumerate(bags)

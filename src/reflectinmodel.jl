@@ -17,11 +17,11 @@ function decrease_hete_ns!(m::ModelSettings)
     return m
 end
 """
-    reflectinmodel(x, n; kwargs...)
+    reflectinmodel(x, root_ns; kwargs...)
 
 Build mixture model of HMILL data.
 x - a signle HMILL sample.
-root_ns - a number of mixture components in the root node.
+root_ns - a number of mixture components in the root node (for classification, it is equal to number of classes).
 
 # Examples
 

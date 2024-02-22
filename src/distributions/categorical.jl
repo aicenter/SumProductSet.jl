@@ -37,7 +37,7 @@ Categorical(n::Integer; dtype::Type{<:Real}=Float32) = Categorical(ones(dtype, n
 ####
 
 logpdf(m::Categorical, x::Union{OneHotArray, MaybeHotArray}) = _logpdf_cat(m.logp, x)
-lgpdf(m::Categorical{T}, x::MaybeHotMatrix{Missing}) where {T<:Real} = zeros(T, 1, size(x, 2))
+logpdf(m::Categorical{T}, x::MaybeHotMatrix{Missing}) where {T<:Real} = zeros(T, 1, size(x, 2))
 
 _get_inidices(x::OneHotArray) = x.indices
 _get_inidices(x::MaybeHotMatrix) = x.I

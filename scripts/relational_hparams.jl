@@ -38,7 +38,7 @@ function slurm_spsn_acc()
         [2, 8],
         [200],
         [20],
-        [1e-1, 1e-2, 1e-3],
+        [1e-2, 1e-3],
         [1],
         collect(1:5)))[n]
     data = read("$(dirdata)/$(dataset.name).json", String)

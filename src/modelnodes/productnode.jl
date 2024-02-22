@@ -19,10 +19,6 @@ julia> logpdf(m, x)
  -36.468  -51.6233
 ```
 """
-# struct ProductNode{C<:AbstractModelNode, D<:Union{UnitRange{Int}, Vector{T}, T} where {T<:Symbol}} <: AbstractModelNode
-#     components::Vector{C}
-#     dimensions::Vector{D}
-# end
 
 struct ProductNode{C<:Tuple{Vararg{<:AbstractModelNode}}, D<:Union{UnitRange{Int}, Vector{T}, T} where {T<:Symbol}} <: AbstractModelNode
   components::C
@@ -52,9 +48,7 @@ end
 #	  Functions for calculating the likelihood
 ####
 
-# logpdf3(m::ProductNode, x::AbstractMatrix) = reduce(+, map((c, d)->logpdf(c, x[d, :]), m.components, m.dimensions))
-# logpdf2(m::ProductNode, x::AbstractMatrix)  = mapreduce((c, d)->logpdf(c, x[d, :]), +, m.components, m.dimensions)  # the slowest gradient, the most allocations
-function logpdf(m::ProductNode, x::AbstractMatrix)   # the fastest gradient, the least number of allocations
+function logpdf(m::ProductNode, x::AbstractMatrix)
     @inbounds l = logpdf(m.components[1], x[m.dimensions[1], :])
     for i in 2:length(m.dimensions)
         @inbounds l += logpdf(m.components[i], x[m.dimensions[i], :])
@@ -62,10 +56,7 @@ function logpdf(m::ProductNode, x::AbstractMatrix)   # the fastest gradient, the
     l
 end
 
-
-# logpdf3(m::ProductNode, x::Mill.ProductNode) = reduce(+, map((c, d)->logpdf(c, x[d]), m.components, m.dimensions))
-# logpdf2(m::ProductNode, x::Mill.ProductNode) = mapreduce((c, d)->logpdf(c, x[d]), +, m.components, m.dimensions)
-function logpdf(m::ProductNode, x::Mill.ProductNode)   # the fastest gradient, the least number of allocations
+function logpdf(m::ProductNode, x::Mill.ProductNode)
     @inbounds l = logpdf(m.components[1], x[m.dimensions[1]])
     for i in 2:length(m.dimensions)
         @inbounds l += logpdf(m.components[i], x[m.dimensions[i]])

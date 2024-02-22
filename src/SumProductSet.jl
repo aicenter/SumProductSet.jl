@@ -24,11 +24,9 @@ include("modelbuilders.jl")
 include("util.jl")
 include("reflectinmodel.jl")
 include("loss.jl")
-include("rank.jl")
 
 export Poisson, Geometric, Categorical, MvNormal, MvStudentt, MvNormalParams
 export MvBernoulli
-export DiagRMvNormal, IsoRMvNormal, UnitMvNormal
 export logpdf, logjnt
 export SumNode, ProductNode, SetNode
 export rand, randwithlabel
@@ -38,10 +36,6 @@ export reflectinmodel
 export em_loss, disc_loss, gen_loss
 export rank
 
-export VAE, Encoder, Decoder, SplitLayer, elbo, reconstruct_loss
-
 Base.show(io::IO, ::MIME"text/plain", n::AbstractModelNode) = HierarchicalUtils.printtree(io, n)
-# Base.show(io::IO, n::AbstractModelNode) = print(io, "Node")
-# Base.show(io::IO, n::AbstractArray{<:AbstractModelNode}) = print(io, "Node")
 
 end # end module

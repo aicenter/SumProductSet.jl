@@ -40,8 +40,6 @@ Geometric(n::Int; dtype::Type{<:Real}=Float32) = Geometric(dtype(0.1)*randn(dtyp
 #   Functions for calculating the likelihood
 ####
 
-# TODO: precompute logsigmoid.(m.logitp)
-
 
 function _logpdf_geometric(logitp::Vector{T}, x::SparseMatrixCSC) where {T<:Real}
     linit = sum(logsigmoid, logitp)
@@ -100,12 +98,6 @@ end
 
 logpdf(m::Geometric, x::SparseMatrixCSC) = _logpdf_geometric(m.logitp, x)
 logpdf(m::Geometric, x::NGramMatrix) = logpdf(m, SparseMatrixCSC(x))
-
-# _logpdf(m::Geometric, k::SparseMatrixCSC) = k .*logsigmoid.(-m.logitp) .+ logsigmoid.(m.logitp)
-
-# logpdf(m::Geometric,     x::NGramMatrix{T})         where {T<:Sequence}            = sum(_logpdf(m, x); dims=1)
-# logpdf(m::Geometric{Tm}, x::NGramMatrix{Maybe{Tx}}) where {Tm<:Real, Tx<:Sequence} = sum(coalesce.(_logpdf(m, x), Tm(0e0)); dims=1)
-# logpdf(m::Geometric, x::SparseMatrixCSC) = sum(_logpdf(m, x); dims=1)
 
 ####
     #   Functions for generating random samples

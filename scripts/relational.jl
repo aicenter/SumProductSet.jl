@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-#SBATCH --array=1-135
+#SBATCH --array=1-90
 #SBATCH --mem=32G
 #SBATCH --time=48:00:00
 #SBATCH --nodes=1 --ntasks-per-node=1 --cpus-per-task=1
@@ -23,7 +23,7 @@ function commands()
     s = ArgParseSettings()
     @add_arg_table s begin
         ("--n"; arg_type = Int; default=1);
-        ("--m"; arg_type = Int; default=1);
+        ("--m"; arg_type = Int; default=13);
     end
     parse_args(s)
 end
@@ -32,8 +32,8 @@ function slurm_spsn_acc()
     @unpack n, m = commands()
     dataset = datasets[m]
     pl, ps, nepoc, bsize, ssize, seed_split, seed_init = collect(Iterators.product(
-        [2],
-        collect(2:10),
+        [1],
+        collect(1:10),
         [200],
         [10],
         [1e-1, 1e-2, 1e-3],
@@ -46,6 +46,8 @@ function slurm_spsn_acc()
     # x = reduce(catobs, suggestextractor(schema(x), (; scalar_extractors = default_scalar_extractor())).(x))
     x = reduce(catobs, suggestextractor(schema(x)).(x))
     x_trn, x_val, x_tst, y_trn, y_val, y_tst = split_data(x, y, seed_split)
+
+    @show x_trn[:latitude].data
 
     m = SumProductSet.reflectinmodel(x_trn[1], length(unique(y)); hete_nl=pl, hete_ns=ps, seed=seed_init)
 
@@ -114,7 +116,7 @@ function slurm_spsn_ad()
     @show rank(m, x_tst)
 end
 
-# slurm_spsn_acc()
+slurm_spsn_acc()
 # slurm_spsn_mis()
 # slurm_spsn_ad()
 
