@@ -31,13 +31,13 @@ end
 function knownsetmixture(μs, Σs, λs, prior)
     components = map(zip(μs, Σs, λs)) do ps
         pc = Poisson(log(ps[3]))
-        pf = MvNormalParams(ps[1], ps[2])
+        pf = MvNormalParams(Float32.(ps[1]), Float32.(ps[2]))
         SetNode(pf, pc)
     end
     SumNode(components, prior)    
 end
 ### Creating and sampling known model
-m1 = knownsetmixture(μ, Σ, λ, [1., 1., 1.])
+m1 = knownsetmixture(μ, Σ, λ, [1f0, 1, 1])
 nbags = 300
 bags, baglabels = randwithlabel(m1, nbags)
 

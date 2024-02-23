@@ -34,6 +34,7 @@ struct MvNormal{T, N} <: Distribution
 end
 
 Flux.@functor MvNormal
+Flux.trainable(m::MvNormal) = (m.b, m.A,)
 
 MvNormal{T, N}(b::Array{T, 1}, A::Array{T, N}) where {T, N} = MvNormal(b, A, zero(T))
 
