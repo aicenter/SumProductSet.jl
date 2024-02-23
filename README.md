@@ -7,7 +7,7 @@ is a package for probabilistic learning of tree-structured, heterogeneous graph 
 To reproduce this project, do the following:
 
 1. Download this repository.
-2. Open the Julia (preferably Julia 1.8) console and type:
+2. Open the Julia (preferably Julia 1.9) console and type:
    ```julia
    using Pkg
    Pkg.activate("path/to/the/project")
