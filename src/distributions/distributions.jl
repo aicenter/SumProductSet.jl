@@ -8,6 +8,8 @@ include("poisson.jl")
 include("mvnormal.jl")
 include("categorical.jl")
 include("geometric.jl")
+include("bernoulli.jl")
+
 
 ####
 #	Functions for making the library compatible with Mill

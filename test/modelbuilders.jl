@@ -51,16 +51,16 @@ end
 @testset "hierarchical model -- logpdf forward" begin
     d1 = 9
     d2 = 11
-    pdist = ()->(SumProductSet.MvNormal(d1), SumProductSet.MvNormal(d2))
+    pdist = ()->(:a=SumProductSet.MvNormal(d1), :b=SumProductSet.MvNormal(d2))
     cdist = ()-> SumProductSet.Poisson()
 
-    prodmodel = ()->ProductNode(pdist())
-    setmodel  = ()->SetNode(prodmodel(), cdist())
+    prodmodel = ()->SumProductSet.ProductNode(pdist())
+    setmodel  = ()->SumProductSet.SetNode(prodmodel(), cdist())
 
-    m = SumNode([setmodel() for _ in 1:3])
+    m = SumProductSet.SumNode([setmodel() for _ in 1:3])
 
-    n = 30
-    pn = Mill.ProductNode((randn(d1, n), randn(d2, n)))
+    nobs = 100
+    pn = Mill.ProductNode(a=randn(Float32, d1, nobs), b=randn(Float32, d2, nobs))
     bn = Mill.BagNode(pn, [1:5, 6:15, 16:16, 17:30])
 
     @test !isnothing(SumProductSet.logpdf(m, bn))

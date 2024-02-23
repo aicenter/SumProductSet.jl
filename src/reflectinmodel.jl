@@ -8,6 +8,7 @@ mutable struct ModelSettings
     dist_disc::Function
     dist_gram::Function
     dist_card::Function
+    dist_bin::Function
     data_type::Type{<:Real}
 end
 
@@ -16,11 +17,11 @@ function decrease_hete_ns!(m::ModelSettings)
     return m
 end
 """
-    reflectinmodel(x, n; kwargs...)
+    reflectinmodel(x, root_ns; kwargs...)
 
 Build mixture model of HMILL data.
 x - a signle HMILL sample.
-root_ns - a number of mixture components in the root node.
+root_ns - a number of mixture components in the root node (for classification, it is equal to number of classes).
 
 # Examples
 
@@ -40,11 +41,12 @@ function reflectinmodel(
         dist_disc = d->Categorical(d),
         dist_gram = d->Geometric(d),
         dist_card = ()->Poisson(),
+        dist_bin = d->MvBernoulli(d),
         data_type::Type{<:Real} = Float32,
         seed::Int=1
     )
 
-    settings = ModelSettings(root_ns, homo_ns, hete_nl, repeat([hete_ns], 9999), dist_cont, dist_disc, dist_gram, dist_card, data_type)
+    settings = ModelSettings(root_ns, homo_ns, hete_nl, repeat([hete_ns], 9999), dist_cont, dist_disc, dist_gram, dist_card, dist_bin, data_type)
 
     Random.seed!(seed)
 
@@ -73,6 +75,7 @@ _reflectinmodel(x::Array{T},              settings) where T <: Real     = settin
 _reflectinmodel(x::Array{Maybe{T}},       settings) where T <: Real     = settings.dist_cont(size(x, 1))
 _reflectinmodel(x::NGramMatrix{T},        settings) where T <: Sequence = settings.dist_gram(size(x, 1))
 _reflectinmodel(x::NGramMatrix{Maybe{T}}, settings) where T <: Sequence = settings.dist_gram(size(x, 1))
+_reflectinmodel(x::BitMatrix,             settings)                     = settings.dist_bin(size(x, 1))
 
 
 function _productmodel(x, n::Int, settings::ModelSettings)
@@ -80,7 +83,7 @@ function _productmodel(x, n::Int, settings::ModelSettings)
     c = map(_->ProductNode(mapreduce(k->_reflectinmodel(x.data[k], settings), vcat, k), reduce(vcat, k)), 1:n)
     n == 1 ? first(c) : SumNode(c)
 end
-function _productmodel(x, scope::Vector{Symbol}, l::Int, n::Int, settings::ModelSettings) where N
+function _productmodel(x, scope::Vector{Symbol}, l::Int, n::Int, settings::ModelSettings)
     d = length(scope)
     k = first(keys(x.data))
     l == 1 && return _productmodel(x, n, settings)
@@ -90,7 +93,7 @@ function _productmodel(x, scope::Vector{Symbol}, l::Int, n::Int, settings::Model
         scope_l, scope_r = scope[1:r], scope[r+1:end]
         comps_l = _productmodel(x[scope_l], scope_l, l-1, n, settings)
         comps_r = _productmodel(x[scope_r], scope_r, l-1, n, settings)
-        ProductNode([comps_l, comps_r], [scope_l, scope_r])
+        ProductNode((comps_l, comps_r), [scope_l, scope_r])
     end
     n == 1 ? first(c) : SumNode(c)
 end

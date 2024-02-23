@@ -45,7 +45,7 @@ function spn(d::Int, l::Int, n::Int; leaf::Function=d->MvNormal(d))
 
     r = ceil(Int, d / 2)
     comp_sum = map(1:n) do _
-        prod_comp = [spn(r, l-1, n; leaf=leaf), spn(d-r, l-1, n; leaf=leaf)]
+        prod_comp = (spn(r, l-1, n; leaf=leaf), spn(d-r, l-1, n; leaf=leaf))
         prod_dims = [1:r, r+1:d]
         ProductNode(prod_comp, prod_dims)
     end
@@ -58,7 +58,7 @@ function spn(d::Int, n::Vector{Int}; leaf::Function=d->MvNormal(d))
 
     r = ceil(Int, d / 2)
     sum_comp = map(1:first(n)) do _
-        prod_comp = [spn(r, n[2:end]; leaf=leaf), spn(d-r, n[2:end]; leaf=leaf)]
+        prod_comp = (spn(r, n[2:end]; leaf=leaf), spn(d-r, n[2:end]; leaf=leaf))
         prod_dims = [1:r, r+1:d]
 
         length(prod_comp) == 1 ? first(prod_comp) : ProductNode(prod_comp, prod_dims)

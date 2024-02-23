@@ -29,6 +29,20 @@ end
     @test Mill.numobs(rand(m, nobs)) == nobs
 end
 
+@testset "SetNode --- rrule test" begin
+    ndims = 2
+    nobs = 100
+    dtype = Float64
+	m = SumProductSet.SetNode(SumProductSet.MvNormal(ndims;dtype=dtype), SumProductSet.Poisson(dtype))
+    x = rand(m, nobs)
+    bags = x.bags.bags
+    logp_f = SumProductSet.logpdf(m.feature, x.data)
+    logp_c = SumProductSet.logpdf(m.cardinality, hcat(length.(bags)...))
+
+    test_rrule(SumProductSet._logpdf_set, logp_f, logp_c, bags ⊢ NoTangent();
+                check_inferred=true, rtol = 1.0e-9, atol = 1.0e-9)
+end
+
 
 @testset "SetNode --- integration with Flux" begin
     ndims = 2

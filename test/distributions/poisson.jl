@@ -10,8 +10,9 @@
 
     ndim = 10
     m = SumProductSet.Poisson(ndim)
-    xs = rand(0:20, ndim, 100)
-    @test !isnothing(SumProductSet.logpdf(m, xs))
+    x = rand(0:20, ndim, 100)
+    @test !isnothing(SumProductSet.logpdf(m, x))
+    @test !isnothing(SumProductSet.logpdf(m, SparseMatrixCSC(x)))
 end
 
 @testset "Poisson --- rand sampling" begin
@@ -21,14 +22,28 @@ end
     @test length(rand(m).data) == length(m.lograte)
 end
 
+@testset "Poisson --- rrule test" begin
+    ndims = 10
+    nobs = 100
+	m = SumProductSet.Poisson(ndims; dtype=Float64)
+    x = rand(m, nobs)
+
+    test_rrule(SumProductSet._logpdf_poisson, m.lograte, x.data ⊢ NoTangent();
+                check_inferred=true, rtol = 1.0e-9, atol = 1.0e-9)
+    test_rrule(SumProductSet._logpdf_poisson, m.lograte, SparseMatrixCSC(x.data) ⊢ NoTangent();
+                check_inferred=true, rtol = 1.0e-9, atol = 1.0e-9)
+end
+
 @testset "Poisson --- integration with Flux" begin
     ndim = 10
-	m = SumProductSet.Poisson()
+	m = SumProductSet.Poisson(ndim)
     ps = Flux.params(m)
 
     @test !isempty(ps)
     x = rand(0:20, ndim, 100)
     @test !isnothing(gradient(() -> sum(SumProductSet.logpdf(m, x)), ps))
+    xs = SparseMatrixCSC(x)
+    @test !isnothing(gradient(() -> sum(SumProductSet.logpdf(m, xs)), ps))
 end
 
 @testset "Poisson --- correctness" begin
@@ -41,4 +56,5 @@ end
 
     @test Distributions.logpdf.(m1, x1)[:] ≈ SumProductSet.logpdf(m2, x1)[:]
     @test Distributions.logpdf.(m1, x2.data)[:] ≈ SumProductSet.logpdf(m2, x2)[:]
+    @test SumProductSet.logpdf(m2, x2.data) ≈ SumProductSet.logpdf(m2, SparseMatrixCSC(x2.data)) 
 end
